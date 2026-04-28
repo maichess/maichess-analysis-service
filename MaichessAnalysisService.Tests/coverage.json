@@ -1,0 +1,1282 @@
+{
+  "maichess-analysis-service.dll": {
+    "C:\\Users\\micro\\source\\MaiChess\\services\\maichess-analysis-service\\Services\\AnalysisGameService.cs": {
+      "MaichessAnalysisService.Services.AnalysisGameService": {
+        "System.ValueTuple`3<System.Collections.Generic.Dictionary`2<System.String,System.String>,System.Collections.Generic.IReadOnlyList`1<System.String>,System.Boolean> MaichessAnalysisService.Services.AnalysisGameService::ParsePgn(System.String)": {
+          "Lines": {
+            "37": 5,
+            "38": 5,
+            "39": 35,
+            "40": 10,
+            "41": 10,
+            "42": 10,
+            "44": 5,
+            "45": 5,
+            "47": 5,
+            "48": 5,
+            "49": 5,
+            "50": 5,
+            "52": 5,
+            "53": 5,
+            "55": 5,
+            "56": 5,
+            "57": 5
+          },
+          "Branches": [
+            {
+              "Line": 39,
+              "Offset": 99,
+              "EndOffset": 33,
+              "Path": 1,
+              "Ordinal": 1,
+              "Hits": 10
+            },
+            {
+              "Line": 39,
+              "Offset": 99,
+              "EndOffset": 101,
+              "Path": 0,
+              "Ordinal": 0,
+              "Hits": 5
+            },
+            {
+              "Line": 45,
+              "Offset": 136,
+              "EndOffset": 138,
+              "Path": 0,
+              "Ordinal": 2,
+              "Hits": 1
+            },
+            {
+              "Line": 45,
+              "Offset": 136,
+              "EndOffset": 141,
+              "Path": 1,
+              "Ordinal": 3,
+              "Hits": 4
+            },
+            {
+              "Line": 55,
+              "Offset": 274,
+              "EndOffset": 276,
+              "Path": 0,
+              "Ordinal": 4,
+              "Hits": 1
+            },
+            {
+              "Line": 55,
+              "Offset": 274,
+              "EndOffset": 287,
+              "Path": 1,
+              "Ordinal": 5,
+              "Hits": 4
+            }
+          ]
+        },
+        "System.String MaichessAnalysisService.Services.AnalysisGameService::MatchSanToUci(System.String,System.Collections.Generic.IEnumerable`1<System.String>,System.String)": {
+          "Lines": {
+            "60": 22,
+            "61": 22,
+            "63": 22,
+            "64": 1,
+            "65": 1,
+            "68": 21,
+            "69": 2,
+            "70": 2,
+            "73": 19,
+            "74": 19,
+            "75": 19,
+            "76": 2,
+            "77": 2,
+            "78": 2,
+            "79": 2,
+            "81": 19,
+            "82": 19,
+            "84": 19,
+            "85": 19,
+            "89": 19,
+            "90": 10,
+            "91": 10,
+            "92": 10,
+            "93": 10,
+            "95": 9,
+            "96": 9,
+            "97": 9,
+            "98": 9,
+            "100": 19,
+            "101": 19,
+            "103": 19,
+            "104": 19,
+            "105": 19,
+            "107": 19,
+            "109": 19,
+            "110": 1,
+            "111": 1,
+            "112": 1,
+            "113": 18,
+            "114": 4,
+            "115": 4,
+            "116": 4,
+            "117": 4,
+            "118": 4,
+            "119": 4,
+            "121": 19,
+            "122": 22
+          },
+          "Branches": [
+            {
+              "Line": 63,
+              "Offset": 53,
+              "EndOffset": 55,
+              "Path": 0,
+              "Ordinal": 0,
+              "Hits": 1
+            },
+            {
+              "Line": 63,
+              "Offset": 53,
+              "EndOffset": 100,
+              "Path": 1,
+              "Ordinal": 1,
+              "Hits": 21
+            },
+            {
+              "Line": 68,
+              "Offset": 115,
+              "EndOffset": 117,
+              "Path": 0,
+              "Ordinal": 2,
+              "Hits": 2
+            },
+            {
+              "Line": 68,
+              "Offset": 115,
+              "EndOffset": 162,
+              "Path": 1,
+              "Ordinal": 3,
+              "Hits": 19
+            },
+            {
+              "Line": 75,
+              "Offset": 189,
+              "EndOffset": 191,
+              "Path": 0,
+              "Ordinal": 4,
+              "Hits": 2
+            },
+            {
+              "Line": 75,
+              "Offset": 189,
+              "EndOffset": 232,
+              "Path": 1,
+              "Ordinal": 5,
+              "Hits": 19
+            },
+            {
+              "Line": 85,
+              "Offset": 305,
+              "EndOffset": 307,
+              "Path": 0,
+              "Ordinal": 6,
+              "Hits": 1
+            },
+            {
+              "Line": 85,
+              "Offset": 305,
+              "EndOffset": 311,
+              "Path": 1,
+              "Ordinal": 7,
+              "Hits": 18
+            },
+            {
+              "Line": 89,
+              "Offset": 329,
+              "EndOffset": 331,
+              "Path": 0,
+              "Ordinal": 8,
+              "Hits": 11
+            },
+            {
+              "Line": 89,
+              "Offset": 329,
+              "EndOffset": 345,
+              "Path": 1,
+              "Ordinal": 9,
+              "Hits": 8
+            },
+            {
+              "Line": 89,
+              "Offset": 350,
+              "EndOffset": 352,
+              "Path": 0,
+              "Ordinal": 10,
+              "Hits": 10
+            },
+            {
+              "Line": 91,
+              "Offset": 358,
+              "EndOffset": 360,
+              "Path": 0,
+              "Ordinal": 12,
+              "Hits": 1
+            },
+            {
+              "Line": 91,
+              "Offset": 358,
+              "EndOffset": 374,
+              "Path": 1,
+              "Ordinal": 13,
+              "Hits": 9
+            },
+            {
+              "Line": 89,
+              "Offset": 350,
+              "EndOffset": 461,
+              "Path": 1,
+              "Ordinal": 11,
+              "Hits": 9
+            },
+            {
+              "Line": 96,
+              "Offset": 467,
+              "EndOffset": 469,
+              "Path": 0,
+              "Ordinal": 14,
+              "Hits": 2
+            },
+            {
+              "Line": 96,
+              "Offset": 467,
+              "EndOffset": 473,
+              "Path": 1,
+              "Ordinal": 15,
+              "Hits": 7
+            },
+            {
+              "Line": 103,
+              "Offset": 530,
+              "EndOffset": 532,
+              "Path": 0,
+              "Ordinal": 16,
+              "Hits": 17
+            },
+            {
+              "Line": 103,
+              "Offset": 530,
+              "EndOffset": 572,
+              "Path": 1,
+              "Ordinal": 17,
+              "Hits": 2
+            },
+            {
+              "Line": 109,
+              "Offset": 635,
+              "EndOffset": 637,
+              "Path": 0,
+              "Ordinal": 18,
+              "Hits": 1
+            },
+            {
+              "Line": 109,
+              "Offset": 635,
+              "EndOffset": 662,
+              "Path": 1,
+              "Ordinal": 19,
+              "Hits": 18
+            },
+            {
+              "Line": 113,
+              "Offset": 680,
+              "EndOffset": 682,
+              "Path": 0,
+              "Ordinal": 20,
+              "Hits": 4
+            },
+            {
+              "Line": 116,
+              "Offset": 721,
+              "EndOffset": 723,
+              "Path": 0,
+              "Ordinal": 22,
+              "Hits": 1
+            },
+            {
+              "Line": 116,
+              "Offset": 721,
+              "EndOffset": 745,
+              "Path": 1,
+              "Ordinal": 23,
+              "Hits": 3
+            },
+            {
+              "Line": 113,
+              "Offset": 680,
+              "EndOffset": 768,
+              "Path": 1,
+              "Ordinal": 21,
+              "Hits": 19
+            }
+          ]
+        },
+        "System.Nullable`1<System.Char> MaichessAnalysisService.Services.AnalysisGameService::GetPieceAt(System.String,System.String)": {
+          "Lines": {
+            "125": 20,
+            "126": 20,
+            "127": 1,
+            "128": 1,
+            "131": 19,
+            "132": 19,
+            "134": 19,
+            "135": 19,
+            "137": 19,
+            "138": 1,
+            "139": 1,
+            "142": 18,
+            "143": 18,
+            "144": 179,
+            "145": 71,
+            "146": 71,
+            "147": 7,
+            "148": 7,
+            "149": 7,
+            "151": 64,
+            "152": 64,
+            "153": 17,
+            "154": 17,
+            "157": 47,
+            "158": 47,
+            "159": 54,
+            "161": 1,
+            "162": 20
+          },
+          "Branches": [
+            {
+              "Line": 126,
+              "Offset": 14,
+              "EndOffset": 16,
+              "Path": 0,
+              "Ordinal": 0,
+              "Hits": 1
+            },
+            {
+              "Line": 126,
+              "Offset": 14,
+              "EndOffset": 34,
+              "Path": 1,
+              "Ordinal": 1,
+              "Hits": 19
+            },
+            {
+              "Line": 137,
+              "Offset": 82,
+              "EndOffset": 84,
+              "Path": 0,
+              "Ordinal": 2,
+              "Hits": 18
+            },
+            {
+              "Line": 137,
+              "Offset": 86,
+              "EndOffset": 88,
+              "Path": 0,
+              "Ordinal": 4,
+              "Hits": 18
+            },
+            {
+              "Line": 137,
+              "Offset": 90,
+              "EndOffset": 92,
+              "Path": 0,
+              "Ordinal": 6,
+              "Hits": 18
+            },
+            {
+              "Line": 137,
+              "Offset": 82,
+              "EndOffset": 101,
+              "Path": 1,
+              "Ordinal": 3,
+              "Hits": 1
+            },
+            {
+              "Line": 137,
+              "Offset": 86,
+              "EndOffset": 101,
+              "Path": 1,
+              "Ordinal": 5,
+              "Hits": 1
+            },
+            {
+              "Line": 137,
+              "Offset": 90,
+              "EndOffset": 101,
+              "Path": 1,
+              "Ordinal": 7,
+              "Hits": 1
+            },
+            {
+              "Line": 137,
+              "Offset": 106,
+              "EndOffset": 108,
+              "Path": 0,
+              "Ordinal": 8,
+              "Hits": 1
+            },
+            {
+              "Line": 137,
+              "Offset": 106,
+              "EndOffset": 123,
+              "Path": 1,
+              "Ordinal": 9,
+              "Hits": 18
+            },
+            {
+              "Line": 144,
+              "Offset": 227,
+              "EndOffset": 141,
+              "Path": 1,
+              "Ordinal": 15,
+              "Hits": 71
+            },
+            {
+              "Line": 146,
+              "Offset": 164,
+              "EndOffset": 166,
+              "Path": 0,
+              "Ordinal": 10,
+              "Hits": 7
+            },
+            {
+              "Line": 146,
+              "Offset": 164,
+              "EndOffset": 180,
+              "Path": 1,
+              "Ordinal": 11,
+              "Hits": 64
+            },
+            {
+              "Line": 152,
+              "Offset": 190,
+              "EndOffset": 192,
+              "Path": 0,
+              "Ordinal": 12,
+              "Hits": 17
+            },
+            {
+              "Line": 152,
+              "Offset": 190,
+              "EndOffset": 204,
+              "Path": 1,
+              "Ordinal": 13,
+              "Hits": 47
+            },
+            {
+              "Line": 144,
+              "Offset": 227,
+              "EndOffset": 229,
+              "Path": 0,
+              "Ordinal": 14,
+              "Hits": 1
+            }
+          ]
+        },
+        "System.Collections.Generic.Dictionary`2<System.String,System.String> MaichessAnalysisService.Services.AnalysisGameService::BuildPlayerInfo(Maichess.MatchManager.V1.Player)": {
+          "Lines": {
+            "307": 10,
+            "308": 10,
+            "309": 6,
+            "310": 2,
+            "311": 2,
+            "312": 10
+          },
+          "Branches": [
+            {
+              "Line": 307,
+              "Offset": 13,
+              "EndOffset": 17,
+              "Path": 0,
+              "Ordinal": 0,
+              "Hits": 4
+            },
+            {
+              "Line": 307,
+              "Offset": 13,
+              "EndOffset": 23,
+              "Path": 1,
+              "Ordinal": 1,
+              "Hits": 6
+            },
+            {
+              "Line": 307,
+              "Offset": 19,
+              "EndOffset": 49,
+              "Path": 1,
+              "Ordinal": 3,
+              "Hits": 2
+            },
+            {
+              "Line": 307,
+              "Offset": 19,
+              "EndOffset": 75,
+              "Path": 0,
+              "Ordinal": 2,
+              "Hits": 2
+            }
+          ]
+        },
+        "System.String MaichessAnalysisService.Services.AnalysisGameService::BuildMinimalPgn(Maichess.MatchManager.V1.Match,System.Collections.Generic.Dictionary`2<System.String,System.String>,System.Collections.Generic.Dictionary`2<System.String,System.String>,System.String)": {
+          "Lines": {
+            "319": 5,
+            "320": 5,
+            "321": 5,
+            "322": 5,
+            "323": 5,
+            "325": 5,
+            "326": 5,
+            "327": 5,
+            "328": 5,
+            "329": 5,
+            "330": 5,
+            "331": 5,
+            "332": 5,
+            "335": 5,
+            "336": 12,
+            "337": 1,
+            "338": 1,
+            "339": 1,
+            "340": 1,
+            "341": 1,
+            "343": 1,
+            "344": 1,
+            "345": 1,
+            "347": 5,
+            "348": 5,
+            "349": 5
+          },
+          "Branches": [
+            {
+              "Line": 320,
+              "Offset": 14,
+              "EndOffset": 16,
+              "Path": 0,
+              "Ordinal": 0,
+              "Hits": 2
+            },
+            {
+              "Line": 320,
+              "Offset": 29,
+              "EndOffset": 31,
+              "Path": 0,
+              "Ordinal": 2,
+              "Hits": 1
+            },
+            {
+              "Line": 320,
+              "Offset": 29,
+              "EndOffset": 38,
+              "Path": 1,
+              "Ordinal": 3,
+              "Hits": 1
+            },
+            {
+              "Line": 320,
+              "Offset": 14,
+              "EndOffset": 41,
+              "Path": 1,
+              "Ordinal": 1,
+              "Hits": 3
+            },
+            {
+              "Line": 322,
+              "Offset": 56,
+              "EndOffset": 58,
+              "Path": 0,
+              "Ordinal": 4,
+              "Hits": 2
+            },
+            {
+              "Line": 322,
+              "Offset": 71,
+              "EndOffset": 73,
+              "Path": 0,
+              "Ordinal": 6,
+              "Hits": 1
+            },
+            {
+              "Line": 322,
+              "Offset": 71,
+              "EndOffset": 80,
+              "Path": 1,
+              "Ordinal": 7,
+              "Hits": 1
+            },
+            {
+              "Line": 322,
+              "Offset": 56,
+              "EndOffset": 84,
+              "Path": 1,
+              "Ordinal": 5,
+              "Hits": 3
+            },
+            {
+              "Line": 336,
+              "Offset": 540,
+              "EndOffset": 403,
+              "Path": 1,
+              "Ordinal": 11,
+              "Hits": 1
+            },
+            {
+              "Line": 338,
+              "Offset": 415,
+              "EndOffset": 417,
+              "Path": 0,
+              "Ordinal": 8,
+              "Hits": 1
+            },
+            {
+              "Line": 338,
+              "Offset": 415,
+              "EndOffset": 483,
+              "Path": 1,
+              "Ordinal": 9,
+              "Hits": 1
+            },
+            {
+              "Line": 336,
+              "Offset": 540,
+              "EndOffset": 545,
+              "Path": 0,
+              "Ordinal": 10,
+              "Hits": 5
+            }
+          ]
+        },
+        "System.Collections.Generic.Dictionary`2<System.String,System.String> MaichessAnalysisService.Services.AnalysisGameService::BuildMatchTags(System.String)": {
+          "Lines": {
+            "352": 5,
+            "353": 5,
+            "354": 5,
+            "355": 5,
+            "356": 5,
+            "357": 5,
+            "358": 5
+          },
+          "Branches": []
+        },
+        "System.Void MaichessAnalysisService.Services.AnalysisGameService::.ctor(MaichessAnalysisService.Domain.IAnalysisGameRepository,Maichess.MatchManager.V1.Matches/MatchesClient,Maichess.MoveValidator.V1.Moves/MovesClient)": {
+          "Lines": {
+            "13": 22,
+            "14": 22,
+            "15": 22,
+            "16": 22
+          },
+          "Branches": []
+        },
+        "System.Void MaichessAnalysisService.Services.AnalysisGameService::.cctor()": {
+          "Lines": {
+            "20": 1,
+            "21": 1,
+            "23": 1,
+            "24": 1,
+            "26": 1,
+            "27": 1,
+            "29": 1,
+            "30": 1,
+            "32": 1,
+            "33": 1
+          },
+          "Branches": []
+        }
+      },
+      "MaichessAnalysisService.Services.AnalysisGameService/<DeleteGameAsync>d__15": {
+        "System.Void MaichessAnalysisService.Services.AnalysisGameService/<DeleteGameAsync>d__15::MoveNext()": {
+          "Lines": {
+            "186": 3,
+            "187": 3,
+            "188": 2,
+            "189": 1,
+            "190": 1,
+            "193": 1,
+            "194": 1
+          },
+          "Branches": [
+            {
+              "Line": 187,
+              "Offset": 157,
+              "EndOffset": 159,
+              "Path": 0,
+              "Ordinal": 0,
+              "Hits": 1
+            },
+            {
+              "Line": 187,
+              "Offset": 157,
+              "EndOffset": 166,
+              "Path": 1,
+              "Ordinal": 1,
+              "Hits": 2
+            },
+            {
+              "Line": 188,
+              "Offset": 202,
+              "EndOffset": 204,
+              "Path": 0,
+              "Ordinal": 2,
+              "Hits": 1
+            },
+            {
+              "Line": 188,
+              "Offset": 202,
+              "EndOffset": 211,
+              "Path": 1,
+              "Ordinal": 3,
+              "Hits": 1
+            }
+          ]
+        }
+      },
+      "MaichessAnalysisService.Services.AnalysisGameService/<GetGameAsync>d__13": {
+        "System.Void MaichessAnalysisService.Services.AnalysisGameService/<GetGameAsync>d__13::MoveNext()": {
+          "Lines": {
+            "165": 3,
+            "166": 3,
+            "167": 2,
+            "168": 1
+          },
+          "Branches": [
+            {
+              "Line": 166,
+              "Offset": 146,
+              "EndOffset": 148,
+              "Path": 0,
+              "Ordinal": 0,
+              "Hits": 1
+            },
+            {
+              "Line": 166,
+              "Offset": 146,
+              "EndOffset": 155,
+              "Path": 1,
+              "Ordinal": 1,
+              "Hits": 2
+            },
+            {
+              "Line": 167,
+              "Offset": 189,
+              "EndOffset": 191,
+              "Path": 0,
+              "Ordinal": 2,
+              "Hits": 1
+            },
+            {
+              "Line": 167,
+              "Offset": 189,
+              "EndOffset": 199,
+              "Path": 1,
+              "Ordinal": 3,
+              "Hits": 1
+            }
+          ]
+        }
+      },
+      "MaichessAnalysisService.Services.AnalysisGameService/<ImportFromMatchAsync>d__17": {
+        "System.Void MaichessAnalysisService.Services.AnalysisGameService/<ImportFromMatchAsync>d__17::MoveNext()": {
+          "Lines": {
+            "247": 8,
+            "248": 8,
+            "249": 8,
+            "250": 8,
+            "252": 7,
+            "254": 7,
+            "255": 1,
+            "256": 1,
+            "259": 6,
+            "260": 6,
+            "261": 6,
+            "262": 6,
+            "264": 6,
+            "265": 1,
+            "266": 1,
+            "269": 5,
+            "270": 12,
+            "271": 1,
+            "272": 1,
+            "273": 1,
+            "274": 1,
+            "275": 1,
+            "276": 1,
+            "278": 5,
+            "279": 5,
+            "281": 5,
+            "282": 5,
+            "283": 2,
+            "284": 1,
+            "285": 1,
+            "286": 1,
+            "287": 5,
+            "289": 5,
+            "290": 5,
+            "291": 5,
+            "292": 5,
+            "293": 5,
+            "294": 5,
+            "295": 5,
+            "296": 5,
+            "297": 5,
+            "298": 5,
+            "299": 5,
+            "300": 5,
+            "301": 5,
+            "303": 5,
+            "304": 5
+          },
+          "Branches": [
+            {
+              "Line": 254,
+              "Offset": 243,
+              "EndOffset": 245,
+              "Path": 0,
+              "Ordinal": 0,
+              "Hits": 1
+            },
+            {
+              "Line": 254,
+              "Offset": 243,
+              "EndOffset": 252,
+              "Path": 1,
+              "Ordinal": 1,
+              "Hits": 6
+            },
+            {
+              "Line": 259,
+              "Offset": 270,
+              "EndOffset": 272,
+              "Path": 0,
+              "Ordinal": 2,
+              "Hits": 4
+            },
+            {
+              "Line": 259,
+              "Offset": 270,
+              "EndOffset": 301,
+              "Path": 1,
+              "Ordinal": 3,
+              "Hits": 2
+            },
+            {
+              "Line": 261,
+              "Offset": 325,
+              "EndOffset": 327,
+              "Path": 0,
+              "Ordinal": 4,
+              "Hits": 4
+            },
+            {
+              "Line": 261,
+              "Offset": 325,
+              "EndOffset": 356,
+              "Path": 1,
+              "Ordinal": 5,
+              "Hits": 2
+            },
+            {
+              "Line": 264,
+              "Offset": 368,
+              "EndOffset": 370,
+              "Path": 0,
+              "Ordinal": 6,
+              "Hits": 3
+            },
+            {
+              "Line": 264,
+              "Offset": 368,
+              "EndOffset": 381,
+              "Path": 1,
+              "Ordinal": 7,
+              "Hits": 3
+            },
+            {
+              "Line": 264,
+              "Offset": 386,
+              "EndOffset": 388,
+              "Path": 0,
+              "Ordinal": 8,
+              "Hits": 1
+            },
+            {
+              "Line": 264,
+              "Offset": 386,
+              "EndOffset": 395,
+              "Path": 1,
+              "Ordinal": 9,
+              "Hits": 5
+            },
+            {
+              "Line": 270,
+              "Offset": 683,
+              "EndOffset": 418,
+              "Path": 1,
+              "Ordinal": 11,
+              "Hits": 1
+            },
+            {
+              "Line": 270,
+              "Offset": 683,
+              "EndOffset": 688,
+              "Path": 0,
+              "Ordinal": 10,
+              "Hits": 5
+            },
+            {
+              "Line": 281,
+              "Offset": 765,
+              "EndOffset": 784,
+              "Path": 1,
+              "Ordinal": 13,
+              "Hits": 2
+            },
+            {
+              "Line": 281,
+              "Offset": 765,
+              "EndOffset": 793,
+              "Path": 2,
+              "Ordinal": 14,
+              "Hits": 1
+            },
+            {
+              "Line": 281,
+              "Offset": 765,
+              "EndOffset": 802,
+              "Path": 3,
+              "Ordinal": 15,
+              "Hits": 1
+            },
+            {
+              "Line": 281,
+              "Offset": 765,
+              "EndOffset": 811,
+              "Path": 0,
+              "Ordinal": 12,
+              "Hits": 1
+            }
+          ]
+        }
+      },
+      "MaichessAnalysisService.Services.AnalysisGameService/<ImportFromPgnAsync>d__16": {
+        "System.Void MaichessAnalysisService.Services.AnalysisGameService/<ImportFromPgnAsync>d__16::MoveNext()": {
+          "Lines": {
+            "197": 5,
+            "198": 5,
+            "199": 5,
+            "200": 1,
+            "201": 1,
+            "204": 4,
+            "205": 4,
+            "206": 4,
+            "207": 4,
+            "209": 17,
+            "210": 3,
+            "211": 3,
+            "212": 3,
+            "213": 3,
+            "215": 3,
+            "216": 3,
+            "218": 2,
+            "219": 2,
+            "220": 2,
+            "221": 2,
+            "223": 2,
+            "224": 2,
+            "225": 2,
+            "226": 2,
+            "227": 2,
+            "229": 3,
+            "230": 3,
+            "231": 3,
+            "232": 3,
+            "233": 3,
+            "234": 3,
+            "235": 3,
+            "236": 3,
+            "237": 3,
+            "238": 3,
+            "239": 3,
+            "240": 3,
+            "241": 3,
+            "243": 3,
+            "244": 3
+          },
+          "Branches": [
+            {
+              "Line": 199,
+              "Offset": 89,
+              "EndOffset": 91,
+              "Path": 0,
+              "Ordinal": 0,
+              "Hits": 1
+            },
+            {
+              "Line": 199,
+              "Offset": 89,
+              "EndOffset": 103,
+              "Path": 1,
+              "Ordinal": 1,
+              "Hits": 4
+            },
+            {
+              "Line": 209,
+              "Offset": 791,
+              "EndOffset": 192,
+              "Path": 1,
+              "Ordinal": 5,
+              "Hits": 3
+            },
+            {
+              "Line": 215,
+              "Offset": 413,
+              "EndOffset": 415,
+              "Path": 0,
+              "Ordinal": 2,
+              "Hits": 1
+            },
+            {
+              "Line": 215,
+              "Offset": 413,
+              "EndOffset": 438,
+              "Path": 1,
+              "Ordinal": 3,
+              "Hits": 2
+            },
+            {
+              "Line": 209,
+              "Offset": 791,
+              "EndOffset": 796,
+              "Path": 0,
+              "Ordinal": 4,
+              "Hits": 3
+            }
+          ]
+        }
+      },
+      "MaichessAnalysisService.Services.AnalysisGameService/<ListGamesAsync>d__14": {
+        "System.Void MaichessAnalysisService.Services.AnalysisGameService/<ListGamesAsync>d__14::MoveNext()": {
+          "Lines": {
+            "172": 3,
+            "173": 3,
+            "174": 3,
+            "175": 3,
+            "177": 3,
+            "178": 3,
+            "180": 3,
+            "182": 3,
+            "183": 3
+          },
+          "Branches": []
+        }
+      }
+    },
+    "C:\\Users\\micro\\source\\MaiChess\\services\\maichess-analysis-service\\Rest\\AnalysisEndpointHelpers.cs": {
+      "MaichessAnalysisService.Rest.AnalysisEndpointHelpers": {
+        "System.Boolean MaichessAnalysisService.Rest.AnalysisEndpointHelpers::TryGetUserId(System.Security.Claims.ClaimsPrincipal,System.String&)": {
+          "Lines": {
+            "11": 2,
+            "12": 2,
+            "13": 2,
+            "14": 2
+          },
+          "Branches": []
+        },
+        "Microsoft.AspNetCore.Http.IResult MaichessAnalysisService.Rest.AnalysisEndpointHelpers::NotFoundResult()": {
+          "Lines": {
+            "16": 1
+          },
+          "Branches": []
+        },
+        "Microsoft.AspNetCore.Http.IResult MaichessAnalysisService.Rest.AnalysisEndpointHelpers::ForbidResult()": {
+          "Lines": {
+            "18": 1
+          },
+          "Branches": []
+        },
+        "Microsoft.AspNetCore.Http.IResult MaichessAnalysisService.Rest.AnalysisEndpointHelpers::InvalidPgnResult(System.String)": {
+          "Lines": {
+            "21": 1
+          },
+          "Branches": []
+        },
+        "Microsoft.AspNetCore.Http.IResult MaichessAnalysisService.Rest.AnalysisEndpointHelpers::MatchOngoingResult()": {
+          "Lines": {
+            "24": 1
+          },
+          "Branches": []
+        }
+      }
+    },
+    "C:\\Users\\micro\\source\\MaiChess\\services\\maichess-analysis-service\\Rest\\AnalysisGameMapper.cs": {
+      "MaichessAnalysisService.Rest.AnalysisGameMapper": {
+        "MaichessAnalysisService.Rest.GameSummaryResponse MaichessAnalysisService.Rest.AnalysisGameMapper::ToSummary(MaichessAnalysisService.Domain.AnalysisGame)": {
+          "Lines": {
+            "9": 2,
+            "10": 2,
+            "11": 2,
+            "12": 2,
+            "13": 2,
+            "14": 2,
+            "15": 2,
+            "16": 2,
+            "17": 2,
+            "18": 2
+          },
+          "Branches": []
+        },
+        "MaichessAnalysisService.Rest.GameDetailResponse MaichessAnalysisService.Rest.AnalysisGameMapper::ToDetail(MaichessAnalysisService.Domain.AnalysisGame)": {
+          "Lines": {
+            "21": 2,
+            "22": 2,
+            "23": 2,
+            "24": 2,
+            "25": 2,
+            "26": 2,
+            "27": 2,
+            "28": 2,
+            "29": 2,
+            "30": 2,
+            "31": 2,
+            "32": 2,
+            "33": 2
+          },
+          "Branches": []
+        }
+      }
+    },
+    "C:\\Users\\micro\\source\\MaiChess\\services\\maichess-analysis-service\\Grpc\\AnalysisGrpcService.cs": {
+      "MaichessAnalysisService.Grpc.AnalysisGrpcService": {
+        "System.Void MaichessAnalysisService.Grpc.AnalysisGrpcService::.ctor(Maichess.Engine.V1.Bots/BotsClient)": {
+          "Lines": {
+            "7": 3
+          },
+          "Branches": []
+        }
+      },
+      "MaichessAnalysisService.Grpc.AnalysisGrpcService/<StreamPositionAnalysis>d__2": {
+        "System.Void MaichessAnalysisService.Grpc.AnalysisGrpcService/<StreamPositionAnalysis>d__2::MoveNext()": {
+          "Lines": {
+            "14": 3,
+            "15": 3,
+            "16": 3,
+            "17": 3,
+            "18": 3,
+            "19": 3,
+            "20": 3,
+            "21": 3,
+            "22": 3,
+            "24": 13,
+            "25": 3,
+            "26": 4,
+            "27": 4,
+            "28": 4,
+            "29": 4,
+            "30": 4,
+            "31": 4,
+            "32": 4,
+            "33": 4,
+            "34": 4,
+            "35": 3,
+            "36": 2
+          },
+          "Branches": [
+            {
+              "Line": 24,
+              "Offset": 594,
+              "EndOffset": 229,
+              "Path": 1,
+              "Ordinal": 1,
+              "Hits": 4
+            },
+            {
+              "Line": 24,
+              "Offset": 594,
+              "EndOffset": 599,
+              "Path": 0,
+              "Ordinal": 0,
+              "Hits": 2
+            }
+          ]
+        }
+      }
+    },
+    "C:\\Users\\micro\\source\\MaiChess\\services\\maichess-analysis-service\\Domain\\AccessDeniedException.cs": {
+      "MaichessAnalysisService.Domain.AccessDeniedException": {
+        "System.Void MaichessAnalysisService.Domain.AccessDeniedException::.ctor()": {
+          "Lines": {
+            "4": 2
+          },
+          "Branches": []
+        }
+      }
+    },
+    "C:\\Users\\micro\\source\\MaiChess\\services\\maichess-analysis-service\\Domain\\AnalysisGame.cs": {
+      "MaichessAnalysisService.Domain.AnalysisGame": {
+        "System.Void MaichessAnalysisService.Domain.AnalysisGame::.ctor(System.String,System.String,System.String,System.String,System.Collections.Generic.IReadOnlyList`1<System.String>,System.Collections.Generic.IReadOnlyList`1<System.String>,System.String,System.String,System.Collections.Generic.IReadOnlyDictionary`2<System.String,System.String>,System.Collections.Generic.IReadOnlyDictionary`2<System.String,System.String>,System.Collections.Generic.IReadOnlyDictionary`2<System.String,System.String>,System.DateTimeOffset)": {
+          "Lines": {
+            "3": 24,
+            "4": 24,
+            "5": 24,
+            "6": 24,
+            "7": 24,
+            "8": 24,
+            "9": 24,
+            "10": 24,
+            "11": 24,
+            "12": 24,
+            "13": 24,
+            "14": 24,
+            "15": 24
+          },
+          "Branches": []
+        }
+      }
+    },
+    "C:\\Users\\micro\\source\\MaiChess\\services\\maichess-analysis-service\\Domain\\AnalysisGameNotFoundException.cs": {
+      "MaichessAnalysisService.Domain.AnalysisGameNotFoundException": {
+        "System.Void MaichessAnalysisService.Domain.AnalysisGameNotFoundException::.ctor()": {
+          "Lines": {
+            "4": 2
+          },
+          "Branches": []
+        }
+      }
+    },
+    "C:\\Users\\micro\\source\\MaiChess\\services\\maichess-analysis-service\\Domain\\InvalidPgnException.cs": {
+      "MaichessAnalysisService.Domain.InvalidPgnException": {
+        "System.Void MaichessAnalysisService.Domain.InvalidPgnException::.ctor(System.String)": {
+          "Lines": {
+            "4": 2
+          },
+          "Branches": []
+        }
+      }
+    },
+    "C:\\Users\\micro\\source\\MaiChess\\services\\maichess-analysis-service\\Domain\\MatchAccessDeniedException.cs": {
+      "MaichessAnalysisService.Domain.MatchAccessDeniedException": {
+        "System.Void MaichessAnalysisService.Domain.MatchAccessDeniedException::.ctor()": {
+          "Lines": {
+            "4": 1
+          },
+          "Branches": []
+        }
+      }
+    },
+    "C:\\Users\\micro\\source\\MaiChess\\services\\maichess-analysis-service\\Domain\\MatchStillOngoingException.cs": {
+      "MaichessAnalysisService.Domain.MatchStillOngoingException": {
+        "System.Void MaichessAnalysisService.Domain.MatchStillOngoingException::.ctor()": {
+          "Lines": {
+            "4": 1
+          },
+          "Branches": []
+        }
+      }
+    }
+  }
+}
