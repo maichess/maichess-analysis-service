@@ -4,6 +4,7 @@ WORKDIR /src
 
 ARG GITHUB_ACTOR
 
+COPY .editorconfig ./
 COPY nuget.config ./
 COPY maichess-analysis-service.csproj ./
 RUN --mount=type=secret,id=GITHUB_TOKEN \
