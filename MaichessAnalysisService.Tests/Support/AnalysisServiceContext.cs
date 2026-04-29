@@ -1,5 +1,6 @@
+using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
-using Maichess.MatchManager.V1;
+using Maichess.Database.V1;
 using Maichess.MoveValidator.V1;
 using MaichessAnalysisService.Domain;
 using MaichessAnalysisService.Services;
@@ -11,7 +12,7 @@ internal sealed class AnalysisServiceContext
 {
     internal IAnalysisGameRepository Repository { get; } = Substitute.For<IAnalysisGameRepository>();
 
-    internal Matches.MatchesClient MatchesClient { get; } = Substitute.For<Matches.MatchesClient>();
+    internal Database.DatabaseClient DbClient { get; } = Substitute.For<Database.DatabaseClient>();
 
     internal Moves.MovesClient MovesClient { get; } = Substitute.For<Moves.MovesClient>();
 
@@ -19,13 +20,13 @@ internal sealed class AnalysisServiceContext
 
     internal AnalysisGame? LastGameResult { get; set; }
 
-    internal (IReadOnlyList<AnalysisGame> Games, int Total, int Page, int PageSize)? LastListResult { get; set; }
+    internal (IReadOnlyList<AnalysisGame> Games, long Total, int Page, int PageSize)? LastListResult { get; set; }
 
     internal Exception? LastException { get; set; }
 
     internal AnalysisServiceContext()
     {
-        Service = new AnalysisGameService(Repository, MatchesClient, MovesClient);
+        Service = new AnalysisGameService(Repository, DbClient, MovesClient);
 
         Repository.InsertAsync(Arg.Any<AnalysisGame>(), Arg.Any<CancellationToken>())
             .Returns(ci => Task.FromResult(ci.Arg<AnalysisGame>() with { Id = "game-1" }));
@@ -43,7 +44,7 @@ internal sealed class AnalysisServiceContext
             .Returns(Task.FromResult<AnalysisGame?>(null));
     }
 
-    internal void SetupList(string userId, IReadOnlyList<AnalysisGame> games, int total)
+    internal void SetupList(string userId, IReadOnlyList<AnalysisGame> games, long total)
     {
         Repository.CountByUserIdAsync(userId, Arg.Any<CancellationToken>())
             .Returns(Task.FromResult(total));
@@ -57,31 +58,93 @@ internal sealed class AnalysisServiceContext
             });
     }
 
-    internal void SetupLegalMoves(string fen, IEnumerable<string> moves)
+    internal void SetupValidateMoveSan(string fen, string san, string uciMove, string resultingFen)
     {
-        GetLegalMovesResponse response = new();
-        response.Moves.AddRange(moves);
+        ValidateMoveSanResponse response = new()
+        {
+            Valid = true,
+            UciMove = uciMove,
+            ResultingFen = resultingFen,
+        };
+        response.PositionHistory.Add(resultingFen);
 
         MovesClient
-            .GetLegalMovesAsync(
-                Arg.Is<GetLegalMovesRequest>(r => r.Fen == fen),
+            .ValidateMoveSanAsync(
+                Arg.Is<ValidateMoveSanRequest>(r => r.Fen == fen && r.Move == san),
                 Arg.Any<Metadata>(),
                 Arg.Any<DateTime?>(),
                 Arg.Any<CancellationToken>())
             .Returns(GrpcHelper.GrpcCall(response));
     }
 
-    internal void SetupValidateMove(string fen, string move, string resultingFen)
+    internal void SetupValidateMoveSanInvalid(string san, string reason)
     {
-        ValidateMoveResponse response = new()
-        {
-            ResultingFen = resultingFen,
-        };
-        response.PositionHistory.Add(resultingFen);
+        ValidateMoveSanResponse response = new() { Valid = false, Reason = reason };
 
         MovesClient
-            .ValidateMoveAsync(
-                Arg.Is<ValidateMoveRequest>(r => r.Fen == fen && r.Move == move),
+            .ValidateMoveSanAsync(
+                Arg.Is<ValidateMoveSanRequest>(r => r.Move == san),
+                Arg.Any<Metadata>(),
+                Arg.Any<DateTime?>(),
+                Arg.Any<CancellationToken>())
+            .Returns(GrpcHelper.GrpcCall(response));
+    }
+
+    internal void SetupConvertSequenceToSan(string startingFen, IReadOnlyList<string> uciMoves, IReadOnlyList<string> sanMoves)
+    {
+        ConvertSequenceToSanResponse response = new();
+        response.SanMoves.AddRange(sanMoves);
+
+        MovesClient
+            .ConvertSequenceToSanAsync(
+                Arg.Is<ConvertSequenceToSanRequest>(r =>
+                    r.StartingFen == startingFen &&
+                    r.UciMoves.SequenceEqual(uciMoves)),
+                Arg.Any<Metadata>(),
+                Arg.Any<DateTime?>(),
+                Arg.Any<CancellationToken>())
+            .Returns(GrpcHelper.GrpcCall(response));
+    }
+
+    internal void SetupMatch(
+        string matchId,
+        string status,
+        string? whiteUserId,
+        string? blackUserId,
+        string? whiteBotId,
+        string? blackBotId,
+        IReadOnlyList<string> moves,
+        IReadOnlyList<string> fenHistory)
+    {
+        Struct matchStruct = new();
+        matchStruct.Fields["status"] = Value.ForString(status);
+        if (whiteUserId is not null)
+        {
+            matchStruct.Fields["white_user_id"] = Value.ForString(whiteUserId);
+        }
+
+        if (blackUserId is not null)
+        {
+            matchStruct.Fields["black_user_id"] = Value.ForString(blackUserId);
+        }
+
+        if (whiteBotId is not null)
+        {
+            matchStruct.Fields["white_bot_id"] = Value.ForString(whiteBotId);
+        }
+
+        if (blackBotId is not null)
+        {
+            matchStruct.Fields["black_bot_id"] = Value.ForString(blackBotId);
+        }
+
+        matchStruct.Fields["moves"] = Value.ForList([.. moves.Select(Value.ForString)]);
+        matchStruct.Fields["fen_history"] = Value.ForList([.. fenHistory.Select(Value.ForString)]);
+
+        GetResponse response = new() { Record = matchStruct };
+        DbClient
+            .GetAsync(
+                Arg.Is<GetRequest>(r => r.Collection == "matches" && r.Id == matchId),
                 Arg.Any<Metadata>(),
                 Arg.Any<DateTime?>(),
                 Arg.Any<CancellationToken>())
@@ -90,40 +153,14 @@ internal sealed class AnalysisServiceContext
 
     internal void SetupMatchNotFound(string matchId)
     {
-        MatchesClient
-            .GetMatchAsync(
-                Arg.Is<GetMatchRequest>(r => r.MatchId == matchId),
+        DbClient
+            .GetAsync(
+                Arg.Is<GetRequest>(r => r.Collection == "matches" && r.Id == matchId),
                 Arg.Any<Metadata>(),
                 Arg.Any<DateTime?>(),
                 Arg.Any<CancellationToken>())
-            .Returns<AsyncUnaryCall<GetMatchResponse>>(_ =>
+            .Returns<AsyncUnaryCall<GetResponse>>(_ =>
                 throw new RpcException(new Status(StatusCode.NotFound, "not found")));
-    }
-
-    internal void SetupMatch(Maichess.MatchManager.V1.Match match)
-    {
-        GetMatchResponse response = new() { Match = match };
-
-        MatchesClient
-            .GetMatchAsync(
-                Arg.Is<GetMatchRequest>(r => r.MatchId == match.Id),
-                Arg.Any<Metadata>(),
-                Arg.Any<DateTime?>(),
-                Arg.Any<CancellationToken>())
-            .Returns(GrpcHelper.GrpcCall(response));
-    }
-
-    internal void SetupMatchPosition(string matchId, int index, string fen)
-    {
-        GetMatchPositionResponse response = new() { Fen = fen };
-
-        MatchesClient
-            .GetMatchPositionAsync(
-                Arg.Is<GetMatchPositionRequest>(r => r.MatchId == matchId && r.Index == index),
-                Arg.Any<Metadata>(),
-                Arg.Any<DateTime?>(),
-                Arg.Any<CancellationToken>())
-            .Returns(GrpcHelper.GrpcCall(response));
     }
 
     internal static AnalysisGame BuildGame(
@@ -135,6 +172,7 @@ internal sealed class AnalysisServiceContext
             UserId: userId,
             Source: source,
             MatchId: null,
+            StartingFen: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
             Moves: ["e2e4", "e7e5"],
             Fens: [
                 "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1",

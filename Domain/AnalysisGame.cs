@@ -5,6 +5,7 @@ internal sealed record AnalysisGame(
     string UserId,
     string Source,
     string? MatchId,
+    string StartingFen,
     IReadOnlyList<string> Moves,
     IReadOnlyList<string> Fens,
     string Pgn,

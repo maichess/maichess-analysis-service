@@ -45,6 +45,7 @@ public sealed class AnalysisGameMapperTests
 
         Assert.Equal("game-42", detail.Id);
         Assert.Equal("pgn", detail.Source);
+        Assert.Equal(game.StartingFen, detail.StartingFen);
         Assert.Null(detail.MatchId);
         Assert.Equal(game.White, detail.White);
         Assert.Equal(game.Black, detail.Black);

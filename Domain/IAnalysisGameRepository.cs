@@ -7,7 +7,7 @@ internal interface IAnalysisGameRepository
     Task<IReadOnlyList<AnalysisGame>> ListByUserIdAsync(
         string userId, int limit, int offset, CancellationToken ct);
 
-    Task<int> CountByUserIdAsync(string userId, CancellationToken ct);
+    Task<long> CountByUserIdAsync(string userId, CancellationToken ct);
 
     Task<AnalysisGame> InsertAsync(AnalysisGame game, CancellationToken ct);
 

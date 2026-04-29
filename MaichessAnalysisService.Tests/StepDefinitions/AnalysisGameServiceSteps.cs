@@ -1,5 +1,3 @@
-using Grpc.Core;
-using Maichess.MatchManager.V1;
 using MaichessAnalysisService.Domain;
 using MaichessAnalysisService.Tests.Support;
 using NSubstitute;
@@ -37,127 +35,52 @@ internal sealed class AnalysisGameServiceSteps(AnalysisServiceContext context)
         context.SetupList(userId, games, count);
     }
 
-    [Given(@"the move validator resolves ""([^""]*)"" at the initial FEN to ""([^""]*)""")]
-    public void GivenMoveValidatorResolvesAtInitialFen(string move, string resultingFen)
+    [Given(@"the move validator accepts SAN ""([^""]*)"" at the initial FEN as UCI ""([^""]*)"" resulting in ""([^""]*)""")]
+    public void GivenMoveValidatorAcceptsSanAtInitialFen(string san, string uci, string resultingFen) =>
+        context.SetupValidateMoveSan(InitialFen, san, uci, resultingFen);
+
+    [Given(@"the move validator accepts SAN ""([^""]*)"" at ""([^""]*)"" as UCI ""([^""]*)"" resulting in ""([^""]*)""")]
+    public void GivenMoveValidatorAcceptsSanAtFen(string san, string fen, string uci, string resultingFen) =>
+        context.SetupValidateMoveSan(fen, san, uci, resultingFen);
+
+    [Given(@"the move validator rejects SAN ""([^""]*)"" at the initial FEN")]
+    public void GivenMoveValidatorRejectsSan(string san) =>
+        context.SetupValidateMoveSanInvalid(san, $"illegal or unrecognised move: {san}");
+
+    [Given(@"match ""([^""]*)"" exists with status ""([^""]*)"" and white user ""([^""]*)"" and black user ""([^""]*)""")]
+    public void GivenMatchWithWhiteAndBlackUser(string matchId, string status, string whiteId, string blackId) =>
+        context.SetupMatch(matchId, status, whiteId, blackId, null, null, [], [InitialFen]);
+
+    [Given(@"match ""([^""]*)"" has moves ""([^""]*)"" and san ""([^""]*)"" from the initial fen")]
+    public void GivenMatchHasMoveAndSan(string matchId, string uciMove, string sanMove)
     {
-        context.SetupLegalMoves(InitialFen, [move]);
-        context.SetupValidateMove(InitialFen, move, resultingFen);
+        string afterMoveFen = "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1";
+
+        // Rebuild with moves
+        context.SetupMatch(matchId, "white_won", "user-1", "user-2", null, null,
+            [uciMove], [InitialFen, afterMoveFen]);
+        context.SetupConvertSequenceToSan(InitialFen, [uciMove], [sanMove]);
     }
 
-    [Given(@"the move validator resolves ""([^""]*)"" at ""([^""]*)"" to ""([^""]*)""")]
-    public void GivenMoveValidatorResolvesAtFen(string move, string fen, string resultingFen)
-    {
-        context.SetupLegalMoves(fen, [move]);
-        context.SetupValidateMove(fen, move, resultingFen);
-    }
+    [Given(@"match ""([^""]*)"" exists with status ""([^""]*)"" and white bot ""([^""]*)"" and black user ""([^""]*)""")]
+    public void GivenMatchWithBotWhiteUserBlack(string matchId, string status, string botId, string userId) =>
+        context.SetupMatch(matchId, status, null, userId, botId, null, [], [InitialFen]);
 
-    [Given(@"the move validator returns no legal moves at the initial FEN")]
-    public void GivenMoveValidatorReturnsNoLegalMovesAtInitialFen() =>
-        context.SetupLegalMoves(InitialFen, []);
+    [Given(@"match ""([^""]*)"" exists with status ""([^""]*)"" and white user ""([^""]*)"" and black bot ""([^""]*)""")]
+    public void GivenMatchWithUserWhiteBotBlack(string matchId, string status, string userId, string botId) =>
+        context.SetupMatch(matchId, status, userId, null, null, botId, [], [InitialFen]);
 
-    [Given(@"match ""([^""]*)"" is finished with white user ""([^""]*)"" and black user ""([^""]*)"" with (\d+) moves? ""?([^""]*)""?")]
-    public void GivenMatchIsFinishedWithMove(string matchId, string whiteId, string blackId, int moveCount, string move)
-    {
-        Match match = new()
-        {
-            Id = matchId,
-            Status = MatchStatus.WhiteWon,
-            White = new Player { UserId = whiteId },
-            Black = new Player { UserId = blackId },
-        };
-        if (moveCount > 0)
-        {
-            match.Moves.Add(move);
-        }
+    [Given(@"match ""([^""]*)"" exists with status ""([^""]*)"" and white user ""([^""]*)"" and no black")]
+    public void GivenMatchWithUserWhiteNoBlack(string matchId, string status, string userId) =>
+        context.SetupMatch(matchId, status, userId, null, null, null, [], [InitialFen]);
 
-        context.SetupMatch(match);
-    }
-
-    [Given(@"match ""([^""]*)"" is finished with white user ""([^""]*)"" and black user ""([^""]*)"" with 0 moves")]
-    public void GivenMatchIsFinishedWithNoMoves(string matchId, string whiteId, string blackId)
-    {
-        Match match = new()
-        {
-            Id = matchId,
-            Status = MatchStatus.WhiteWon,
-            White = new Player { UserId = whiteId },
-            Black = new Player { UserId = blackId },
-        };
-        context.SetupMatch(match);
-    }
-
-    [Given(@"match ""([^""]*)"" is ongoing with white user ""([^""]*)"" and black user ""([^""]*)""")]
-    public void GivenMatchIsOngoing(string matchId, string whiteId, string blackId)
-    {
-        Match match = new()
-        {
-            Id = matchId,
-            Status = MatchStatus.Ongoing,
-            White = new Player { UserId = whiteId },
-            Black = new Player { UserId = blackId },
-        };
-        context.SetupMatch(match);
-    }
+    [Given(@"match ""([^""]*)"" exists with status ""([^""]*)"" and no white and black user ""([^""]*)""")]
+    public void GivenMatchWithNoWhiteUserBlack(string matchId, string status, string userId) =>
+        context.SetupMatch(matchId, status, null, userId, null, null, [], [InitialFen]);
 
     [Given(@"match ""([^""]*)"" does not exist")]
     public void GivenMatchDoesNotExist(string matchId) =>
         context.SetupMatchNotFound(matchId);
-
-    [Given(@"match position (\d+) for ""([^""]*)"" is ""([^""]*)""")]
-    public void GivenMatchPositionIs(int index, string matchId, string fen) =>
-        context.SetupMatchPosition(matchId, index, fen);
-
-    [Given(@"match ""([^""]*)"" has bot white ""([^""]*)"" and user black ""([^""]*)"" finished with black winning")]
-    public void GivenMatchHasBotWhiteUserBlackFinishedWithBlackWinning(string matchId, string botId, string userId)
-    {
-        Match match = new()
-        {
-            Id = matchId,
-            Status = MatchStatus.BlackWon,
-            White = new Player { BotId = botId },
-            Black = new Player { UserId = userId },
-        };
-        context.SetupMatch(match);
-    }
-
-    [Given(@"match ""([^""]*)"" has user white ""([^""]*)"" and no-identity black finished as draw")]
-    public void GivenMatchHasUserWhiteNoIdentityBlackFinishedAsDraw(string matchId, string userId)
-    {
-        Match match = new()
-        {
-            Id = matchId,
-            Status = MatchStatus.Draw,
-            White = new Player { UserId = userId },
-            Black = new Player(),
-        };
-        context.SetupMatch(match);
-    }
-
-    [Given(@"match ""([^""]*)"" has user white ""([^""]*)"" and bot black ""([^""]*)"" finished with white winning")]
-    public void GivenMatchHasUserWhiteBotBlackFinishedWithWhiteWinning(string matchId, string userId, string botId)
-    {
-        Match match = new()
-        {
-            Id = matchId,
-            Status = MatchStatus.WhiteWon,
-            White = new Player { UserId = userId },
-            Black = new Player { BotId = botId },
-        };
-        context.SetupMatch(match);
-    }
-
-    [Given(@"match ""([^""]*)"" has no-identity white and user black ""([^""]*)"" with unspecified status")]
-    public void GivenMatchHasNoIdentityWhiteUserBlackUnspecifiedStatus(string matchId, string userId)
-    {
-        Match match = new()
-        {
-            Id = matchId,
-            Status = MatchStatus.Unspecified,
-            White = new Player(),
-            Black = new Player { UserId = userId },
-        };
-        context.SetupMatch(match);
-    }
 
     // ── When ─────────────────────────────────────────────────────────────────
 
@@ -245,6 +168,20 @@ internal sealed class AnalysisGameServiceSteps(AnalysisServiceContext context)
         }
     }
 
+    [When(@"""([^""]*)"" imports FEN ""([^""]*)""")]
+    public async Task WhenImportsFen(string userId, string fen)
+    {
+        context.LastException = null;
+        try
+        {
+            context.LastGameResult = await context.Service.ImportFromFenAsync(fen, userId, CancellationToken.None);
+        }
+        catch (Exception ex)
+        {
+            context.LastException = ex;
+        }
+    }
+
     // ── Then ─────────────────────────────────────────────────────────────────
 
     [Then(@"the result game has id ""([^""]*)""")]
@@ -274,6 +211,17 @@ internal sealed class AnalysisGameServiceSteps(AnalysisServiceContext context)
     [Then(@"the result game result is ""([^""]*)""")]
     public void ThenResultGameResultIs(string result) =>
         Assert.Equal(result, context.LastGameResult!.Result);
+
+    [Then(@"the result game starting fen is ""([^""]*)""")]
+    public void ThenResultGameStartingFenIs(string fen) =>
+        Assert.Equal(fen, context.LastGameResult!.StartingFen);
+
+    [Then(@"the result game has no moves and no fens")]
+    public void ThenResultGameHasNoMovesAndNoFens()
+    {
+        Assert.Empty(context.LastGameResult!.Moves);
+        Assert.Empty(context.LastGameResult!.Fens);
+    }
 
     [Then(@"the list result contains (\d+) games?")]
     public void ThenListResultContains(int count) =>
@@ -320,12 +268,5 @@ internal sealed class AnalysisGameServiceSteps(AnalysisServiceContext context)
     {
         InvalidPgnException ex = Assert.IsType<InvalidPgnException>(context.LastException);
         Assert.Contains(reason, ex.Reason, StringComparison.Ordinal);
-    }
-
-    [Then(@"an RpcException with NotFound is thrown")]
-    public void ThenRpcExceptionNotFoundIsThrown()
-    {
-        RpcException ex = Assert.IsType<RpcException>(context.LastException);
-        Assert.Equal(StatusCode.NotFound, ex.StatusCode);
     }
 }

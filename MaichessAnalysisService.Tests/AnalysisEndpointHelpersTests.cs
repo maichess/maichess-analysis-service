@@ -68,4 +68,43 @@ public sealed class AnalysisEndpointHelpersTests
         Assert.Equal(400, ((IStatusCodeHttpResult)badRequest).StatusCode);
         Assert.Equal("match is still ongoing", badRequest.Value!.Error);
     }
+
+    [Fact]
+    public void SessionNotFoundResult_Returns404StatusCode()
+    {
+        IResult result = AnalysisEndpointHelpers.SessionNotFoundResult();
+
+        IStatusCodeHttpResult statusResult = Assert.IsAssignableFrom<IStatusCodeHttpResult>(result);
+        Assert.Equal(404, statusResult.StatusCode);
+    }
+
+    [Fact]
+    public void WhatifEmptyResult_Returns400WithNoWhatifMessage()
+    {
+        IResult result = AnalysisEndpointHelpers.WhatifEmptyResult();
+
+        BadRequest<ErrorResponse> badRequest = Assert.IsType<BadRequest<ErrorResponse>>(result);
+        Assert.Equal(400, ((IStatusCodeHttpResult)badRequest).StatusCode);
+        Assert.Equal("no whatif moves", badRequest.Value!.Error);
+    }
+
+    [Fact]
+    public void NavigationOutOfRangeResult_Returns400WithOutOfRangeMessage()
+    {
+        IResult result = AnalysisEndpointHelpers.NavigationOutOfRangeResult();
+
+        BadRequest<ErrorResponse> badRequest = Assert.IsType<BadRequest<ErrorResponse>>(result);
+        Assert.Equal(400, ((IStatusCodeHttpResult)badRequest).StatusCode);
+        Assert.Equal("navigation index out of range", badRequest.Value!.Error);
+    }
+
+    [Fact]
+    public void InvalidWhatifMoveResult_Returns400WithGivenReason()
+    {
+        IResult result = AnalysisEndpointHelpers.InvalidWhatifMoveResult("move e2e9 is illegal");
+
+        BadRequest<ErrorResponse> badRequest = Assert.IsType<BadRequest<ErrorResponse>>(result);
+        Assert.Equal(400, ((IStatusCodeHttpResult)badRequest).StatusCode);
+        Assert.Equal("move e2e9 is illegal", badRequest.Value!.Error);
+    }
 }

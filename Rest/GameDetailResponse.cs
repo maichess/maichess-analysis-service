@@ -7,6 +7,7 @@ namespace MaichessAnalysisService.Rest;
 internal sealed record GameDetailResponse(
     [property: JsonPropertyName("id")] string Id,
     [property: JsonPropertyName("source")] string Source,
+    [property: JsonPropertyName("starting_fen")] string StartingFen,
     [property: JsonPropertyName("match_id")] string? MatchId,
     [property: JsonPropertyName("white")] IReadOnlyDictionary<string, string> White,
     [property: JsonPropertyName("black")] IReadOnlyDictionary<string, string> Black,

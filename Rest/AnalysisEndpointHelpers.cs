@@ -22,4 +22,15 @@ internal static class AnalysisEndpointHelpers
 
     internal static IResult MatchOngoingResult() =>
         Results.BadRequest(new ErrorResponse("match is still ongoing"));
+
+    internal static IResult SessionNotFoundResult() => Results.NotFound();
+
+    internal static IResult WhatifEmptyResult() =>
+        Results.BadRequest(new ErrorResponse("no whatif moves"));
+
+    internal static IResult NavigationOutOfRangeResult() =>
+        Results.BadRequest(new ErrorResponse("navigation index out of range"));
+
+    internal static IResult InvalidWhatifMoveResult(string reason) =>
+        Results.BadRequest(new ErrorResponse(reason));
 }

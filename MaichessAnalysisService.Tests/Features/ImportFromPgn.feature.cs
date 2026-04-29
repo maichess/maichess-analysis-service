@@ -111,13 +111,13 @@ namespace MaichessAnalysisService.Tests.Features
             {
                 await this.ScenarioStartAsync();
 #line 5
-    await testRunner.GivenAsync(("the move validator resolves \"e2e4\" at the initial FEN to \"rnbqkbnr/pppppppp/8/8/4" +
-                        "P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1\""), ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
+    await testRunner.GivenAsync(("the move validator accepts SAN \"e4\" at the initial FEN as UCI \"e2e4\" resulting in" +
+                        " \"rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1\""), ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
 #line hidden
 #line 6
-    await testRunner.AndAsync(("the move validator resolves \"e7e5\" at \"rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQK" +
-                        "BNR b KQkq e3 0 1\" to \"rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq e6" +
-                        " 0 2\""), ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+    await testRunner.AndAsync(("the move validator accepts SAN \"e5\" at \"rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQ" +
+                        "KBNR b KQkq e3 0 1\" as UCI \"e7e5\" resulting in \"rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PP" +
+                        "PP1PPP/RNBQKBNR w KQkq e6 0 2\""), ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
 #line 7
     await testRunner.WhenAsync("\"user-1\" imports the following PGN:", "[White \"Alice\"]\r\n[Black \"Bob\"]\r\n[Result \"*\"]\r\n\r\n1. e4 e5 *", ((global::Reqnroll.Table)(null)), "When ");
@@ -247,13 +247,48 @@ namespace MaichessAnalysisService.Tests.Features
             {
                 await this.ScenarioStartAsync();
 #line 48
-    await testRunner.GivenAsync("the move validator returns no legal moves at the initial FEN", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
+    await testRunner.GivenAsync("the move validator rejects SAN \"Zz99\" at the initial FEN", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
 #line hidden
 #line 49
     await testRunner.WhenAsync("\"user-1\" imports the following PGN:", "[Event \"Test\"]\r\n[Result \"*\"]\r\n\r\n1. Zz99 *", ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
 #line 56
     await testRunner.ThenAsync("an InvalidPgnException is thrown with reason containing \"Zz99\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+#line hidden
+            }
+            await this.ScenarioCleanupAsync();
+        }
+        
+        [Xunit.SkippableFactAttribute(DisplayName="PGN with FEN header sets custom starting position")]
+        [Xunit.TraitAttribute("FeatureTitle", "Import From PGN")]
+        [Xunit.TraitAttribute("Description", "PGN with FEN header sets custom starting position")]
+        public async System.Threading.Tasks.Task PGNWithFENHeaderSetsCustomStartingPosition()
+        {
+            string[] tagsOfScenario = ((string[])(null));
+            System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
+            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("PGN with FEN header sets custom starting position", null, tagsOfScenario, argumentsOfScenario, featureTags);
+#line 58
+  this.ScenarioInitialize(scenarioInfo);
+#line hidden
+            if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
+            {
+                testRunner.SkipScenario();
+            }
+            else
+            {
+                await this.ScenarioStartAsync();
+#line 59
+    await testRunner.GivenAsync(("the move validator accepts SAN \"e4\" at \"r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w K" +
+                        "Qkq - 0 1\" as UCI \"e2e4\" resulting in \"r3k2r/pppppppp/8/8/4P3/8/PPPP1PPP/R3K2R b" +
+                        " KQkq e3 0 1\""), ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
+#line hidden
+#line 60
+    await testRunner.WhenAsync("\"user-1\" imports the following PGN:", ("[FEN \"r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1\"]\r\n[SetUp \"1\"]\r\n\r\n1. e4 " +
+                        "*"), ((global::Reqnroll.Table)(null)), "When ");
+#line hidden
+#line 67
+    await testRunner.ThenAsync(("the result game starting fen is \"r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0" +
+                        " 1\""), ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
             }
             await this.ScenarioCleanupAsync();

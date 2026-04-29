@@ -92,14 +92,14 @@ namespace MaichessAnalysisService.Tests.Features
             await this.TestTearDownAsync();
         }
         
-        [Xunit.SkippableFactAttribute(DisplayName="Finished match imports successfully with correct FEN history")]
+        [Xunit.SkippableFactAttribute(DisplayName="Finished match with moves imports successfully")]
         [Xunit.TraitAttribute("FeatureTitle", "Import From Match")]
-        [Xunit.TraitAttribute("Description", "Finished match imports successfully with correct FEN history")]
-        public async System.Threading.Tasks.Task FinishedMatchImportsSuccessfullyWithCorrectFENHistory()
+        [Xunit.TraitAttribute("Description", "Finished match with moves imports successfully")]
+        public async System.Threading.Tasks.Task FinishedMatchWithMovesImportsSuccessfully()
         {
             string[] tagsOfScenario = ((string[])(null));
             System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
-            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Finished match imports successfully with correct FEN history", null, tagsOfScenario, argumentsOfScenario, featureTags);
+            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Finished match with moves imports successfully", null, tagsOfScenario, argumentsOfScenario, featureTags);
 #line 4
   this.ScenarioInitialize(scenarioInfo);
 #line hidden
@@ -111,12 +111,11 @@ namespace MaichessAnalysisService.Tests.Features
             {
                 await this.ScenarioStartAsync();
 #line 5
-    await testRunner.GivenAsync(("match \"match-1\" is finished with white user \"user-1\" and black user \"user-2\" with" +
-                        " 1 move \"e2e4\""), ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
+    await testRunner.GivenAsync(("match \"match-1\" exists with status \"white_won\" and white user \"user-1\" and black " +
+                        "user \"user-2\""), ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
 #line hidden
 #line 6
-    await testRunner.AndAsync(("match position 1 for \"match-1\" is \"rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR " +
-                        "b KQkq e3 0 1\""), ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+    await testRunner.AndAsync("match \"match-1\" has moves \"e2e4\" and san \"e4\" from the initial fen", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
 #line 7
     await testRunner.WhenAsync("\"user-1\" imports match \"match-1\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
@@ -153,7 +152,8 @@ namespace MaichessAnalysisService.Tests.Features
             {
                 await this.ScenarioStartAsync();
 #line 13
-    await testRunner.GivenAsync("match \"match-2\" is ongoing with white user \"user-1\" and black user \"user-2\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
+    await testRunner.GivenAsync(("match \"match-2\" exists with status \"ongoing\" and white user \"user-1\" and black us" +
+                        "er \"user-2\""), ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
 #line hidden
 #line 14
     await testRunner.WhenAsync("\"user-1\" imports match \"match-2\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
@@ -184,8 +184,8 @@ namespace MaichessAnalysisService.Tests.Features
             {
                 await this.ScenarioStartAsync();
 #line 18
-    await testRunner.GivenAsync(("match \"match-3\" is finished with white user \"user-1\" and black user \"user-2\" with" +
-                        " 0 moves"), ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
+    await testRunner.GivenAsync(("match \"match-3\" exists with status \"white_won\" and white user \"user-1\" and black " +
+                        "user \"user-2\""), ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
 #line hidden
 #line 19
     await testRunner.WhenAsync("\"outsider\" imports match \"match-3\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
@@ -197,14 +197,14 @@ namespace MaichessAnalysisService.Tests.Features
             await this.ScenarioCleanupAsync();
         }
         
-        [Xunit.SkippableFactAttribute(DisplayName="Match not found propagates RpcException")]
+        [Xunit.SkippableFactAttribute(DisplayName="Match not found throws AnalysisGameNotFoundException")]
         [Xunit.TraitAttribute("FeatureTitle", "Import From Match")]
-        [Xunit.TraitAttribute("Description", "Match not found propagates RpcException")]
-        public async System.Threading.Tasks.Task MatchNotFoundPropagatesRpcException()
+        [Xunit.TraitAttribute("Description", "Match not found throws AnalysisGameNotFoundException")]
+        public async System.Threading.Tasks.Task MatchNotFoundThrowsAnalysisGameNotFoundException()
         {
             string[] tagsOfScenario = ((string[])(null));
             System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
-            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Match not found propagates RpcException", null, tagsOfScenario, argumentsOfScenario, featureTags);
+            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Match not found throws AnalysisGameNotFoundException", null, tagsOfScenario, argumentsOfScenario, featureTags);
 #line 22
   this.ScenarioInitialize(scenarioInfo);
 #line hidden
@@ -222,7 +222,7 @@ namespace MaichessAnalysisService.Tests.Features
     await testRunner.WhenAsync("\"user-1\" imports match \"missing\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
 #line 25
-    await testRunner.ThenAsync("an RpcException with NotFound is thrown", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+    await testRunner.ThenAsync("an AnalysisGameNotFoundException is thrown", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
             }
             await this.ScenarioCleanupAsync();
@@ -247,8 +247,8 @@ namespace MaichessAnalysisService.Tests.Features
             {
                 await this.ScenarioStartAsync();
 #line 28
-    await testRunner.GivenAsync(("match \"match-5\" has bot white \"bot-1\" and user black \"user-1\" finished with black" +
-                        " winning"), ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
+    await testRunner.GivenAsync(("match \"match-5\" exists with status \"black_won\" and white bot \"bot-1\" and black us" +
+                        "er \"user-1\""), ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
 #line hidden
 #line 29
     await testRunner.WhenAsync("\"user-1\" imports match \"match-5\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
@@ -260,14 +260,14 @@ namespace MaichessAnalysisService.Tests.Features
             await this.ScenarioCleanupAsync();
         }
         
-        [Xunit.SkippableFactAttribute(DisplayName="Draw match with no-identity black imports with correct result")]
+        [Xunit.SkippableFactAttribute(DisplayName="Draw match with no black imports with correct result")]
         [Xunit.TraitAttribute("FeatureTitle", "Import From Match")]
-        [Xunit.TraitAttribute("Description", "Draw match with no-identity black imports with correct result")]
-        public async System.Threading.Tasks.Task DrawMatchWithNo_IdentityBlackImportsWithCorrectResult()
+        [Xunit.TraitAttribute("Description", "Draw match with no black imports with correct result")]
+        public async System.Threading.Tasks.Task DrawMatchWithNoBlackImportsWithCorrectResult()
         {
             string[] tagsOfScenario = ((string[])(null));
             System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
-            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Draw match with no-identity black imports with correct result", null, tagsOfScenario, argumentsOfScenario, featureTags);
+            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Draw match with no black imports with correct result", null, tagsOfScenario, argumentsOfScenario, featureTags);
 #line 32
   this.ScenarioInitialize(scenarioInfo);
 #line hidden
@@ -279,7 +279,7 @@ namespace MaichessAnalysisService.Tests.Features
             {
                 await this.ScenarioStartAsync();
 #line 33
-    await testRunner.GivenAsync("match \"match-6\" has user white \"user-1\" and no-identity black finished as draw", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
+    await testRunner.GivenAsync("match \"match-6\" exists with status \"draw\" and white user \"user-1\" and no black", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
 #line hidden
 #line 34
     await testRunner.WhenAsync("\"user-1\" imports match \"match-6\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
@@ -310,8 +310,8 @@ namespace MaichessAnalysisService.Tests.Features
             {
                 await this.ScenarioStartAsync();
 #line 38
-    await testRunner.GivenAsync(("match \"match-7\" has user white \"user-1\" and bot black \"bot-1\" finished with white" +
-                        " winning"), ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
+    await testRunner.GivenAsync(("match \"match-7\" exists with status \"white_won\" and white user \"user-1\" and black " +
+                        "bot \"bot-1\""), ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
 #line hidden
 #line 39
     await testRunner.WhenAsync("\"user-1\" imports match \"match-7\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
@@ -323,14 +323,14 @@ namespace MaichessAnalysisService.Tests.Features
             await this.ScenarioCleanupAsync();
         }
         
-        [Xunit.SkippableFactAttribute(DisplayName="Unspecified status match with no-identity white imports with asterisk result")]
+        [Xunit.SkippableFactAttribute(DisplayName="Unspecified status imports with asterisk result")]
         [Xunit.TraitAttribute("FeatureTitle", "Import From Match")]
-        [Xunit.TraitAttribute("Description", "Unspecified status match with no-identity white imports with asterisk result")]
-        public async System.Threading.Tasks.Task UnspecifiedStatusMatchWithNo_IdentityWhiteImportsWithAsteriskResult()
+        [Xunit.TraitAttribute("Description", "Unspecified status imports with asterisk result")]
+        public async System.Threading.Tasks.Task UnspecifiedStatusImportsWithAsteriskResult()
         {
             string[] tagsOfScenario = ((string[])(null));
             System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
-            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Unspecified status match with no-identity white imports with asterisk result", null, tagsOfScenario, argumentsOfScenario, featureTags);
+            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Unspecified status imports with asterisk result", null, tagsOfScenario, argumentsOfScenario, featureTags);
 #line 42
   this.ScenarioInitialize(scenarioInfo);
 #line hidden
@@ -342,8 +342,8 @@ namespace MaichessAnalysisService.Tests.Features
             {
                 await this.ScenarioStartAsync();
 #line 43
-    await testRunner.GivenAsync(("match \"match-8\" has no-identity white and user black \"user-1\" with unspecified st" +
-                        "atus"), ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
+    await testRunner.GivenAsync(("match \"match-8\" exists with status \"unspecified\" and no white and black user \"use" +
+                        "r-1\""), ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
 #line hidden
 #line 44
     await testRunner.WhenAsync("\"user-1\" imports match \"match-8\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");

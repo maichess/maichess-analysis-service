@@ -21,6 +21,7 @@ internal static class AnalysisGameMapper
         new(
             game.Id,
             game.Source,
+            game.StartingFen,
             game.MatchId,
             game.White,
             game.Black,

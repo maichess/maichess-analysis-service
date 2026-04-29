@@ -1,9 +1,11 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Security.Claims;
 using Grpc.Core;
+using Maichess.Engine.V1;
 using MaichessAnalysisService.Domain;
 using MaichessAnalysisService.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 
 namespace MaichessAnalysisService.Rest;
 
@@ -12,13 +14,27 @@ internal static class AnalysisEndpoints
 {
     internal static IEndpointRouteBuilder MapAnalysisEndpoints(this IEndpointRouteBuilder routes)
     {
-        RouteGroupBuilder group = routes.MapGroup("/games").RequireAuthorization();
+        RouteGroupBuilder games = routes.MapGroup("/games").RequireAuthorization();
+        games.MapGet(string.Empty, ListGames);
+        games.MapGet("/{id}", GetGame);
+        games.MapPost(string.Empty, ImportPgn);
+        games.MapPost("/from-match/{matchId}", ImportFromMatch);
+        games.MapPost("/from-fen", ImportFromFen);
+        games.MapDelete("/{id}", DeleteGame);
 
-        group.MapGet(string.Empty, ListGames);
-        group.MapGet("/{id}", GetGame);
-        group.MapPost(string.Empty, ImportPgn);
-        group.MapPost("/from-match/{matchId}", ImportFromMatch);
-        group.MapDelete("/{id}", DeleteGame);
+        RouteGroupBuilder analysis = routes.MapGroup("/analysis").RequireAuthorization();
+        analysis.MapGet("/config", GetAnalysisConfig);
+
+        RouteGroupBuilder sessions = routes.MapGroup("/sessions").RequireAuthorization();
+        sessions.MapPost(string.Empty, CreateSession);
+        sessions.MapDelete("/{id}", DestroySession);
+        sessions.MapPost("/{id}/navigate", Navigate);
+        sessions.MapPost("/{id}/whatif", PlayWhatif);
+        sessions.MapDelete("/{id}/whatif", ResetWhatif);
+        sessions.MapDelete("/{id}/whatif/last", UndoLastWhatif);
+        sessions.MapGet("/{id}/whatif/pgn", GetWhatifPgn);
+        sessions.MapPost("/{id}/analysis", StartAnalysis);
+        sessions.MapDelete("/{id}/analysis", StopAnalysis);
 
         return routes;
     }
@@ -35,7 +51,7 @@ internal static class AnalysisEndpoints
             return Results.Unauthorized();
         }
 
-        (IReadOnlyList<AnalysisGame> games, int total, int p, int ps) =
+        (IReadOnlyList<AnalysisGame> games, long total, int p, int ps) =
             await service.ListGamesAsync(userId, page, pageSize, ct);
 
         return Results.Ok(new GamesListResponse(
@@ -109,6 +125,10 @@ internal static class AnalysisEndpoints
             AnalysisGame game = await service.ImportFromMatchAsync(matchId, userId, ct);
             return Results.Created($"/games/{game.Id}", AnalysisGameMapper.ToDetail(game));
         }
+        catch (AnalysisGameNotFoundException)
+        {
+            return AnalysisEndpointHelpers.NotFoundResult();
+        }
         catch (MatchStillOngoingException)
         {
             return AnalysisEndpointHelpers.MatchOngoingResult();
@@ -117,9 +137,27 @@ internal static class AnalysisEndpoints
         {
             return AnalysisEndpointHelpers.ForbidResult();
         }
-        catch (RpcException ex) when (ex.StatusCode == StatusCode.NotFound)
+    }
+
+    private static async Task<IResult> ImportFromFen(
+        [FromBody] FromFenRequest body,
+        ClaimsPrincipal principal,
+        AnalysisGameService service,
+        CancellationToken ct)
+    {
+        if (!AnalysisEndpointHelpers.TryGetUserId(principal, out string? userId))
         {
-            return AnalysisEndpointHelpers.NotFoundResult();
+            return Results.Unauthorized();
+        }
+
+        try
+        {
+            AnalysisGame game = await service.ImportFromFenAsync(body.Fen, userId, ct);
+            return Results.Created($"/games/{game.Id}", AnalysisGameMapper.ToDetail(game));
+        }
+        catch (InvalidPgnException ex)
+        {
+            return AnalysisEndpointHelpers.InvalidPgnResult(ex.Reason);
         }
     }
 
@@ -146,6 +184,243 @@ internal static class AnalysisEndpoints
         catch (AccessDeniedException)
         {
             return AnalysisEndpointHelpers.ForbidResult();
+        }
+    }
+
+    private static async Task<IResult> GetAnalysisConfig(
+        Bots.BotsClient botsClient,
+        IOptions<AnalysisConfig> configOptions,
+        CancellationToken ct)
+    {
+        ListBotsResponse resp = await botsClient.ListBotsAsync(
+            new ListBotsRequest(), cancellationToken: ct);
+
+        AnalysisConfig config = configOptions.Value;
+        return Results.Ok(new AnalysisConfigResponse(
+            config.DefaultBotId,
+            config.DefaultLineCount,
+            [.. resp.Bots.Select(b => new BotInfoResponse(b.Id, b.Name, b.Elo))]));
+    }
+
+    private static async Task<IResult> CreateSession(
+        [FromBody] CreateSessionRequest body,
+        ClaimsPrincipal principal,
+        AnalysisSessionService service,
+        CancellationToken ct)
+    {
+        if (!AnalysisEndpointHelpers.TryGetUserId(principal, out string? userId))
+        {
+            return Results.Unauthorized();
+        }
+
+        try
+        {
+            Domain.AnalysisSession session = await service.CreateSessionAsync(
+                userId, body.GameId, body.BotId, body.LineCount, ct);
+            return Results.Created($"/sessions/{session.Id}", SessionResponse.FromSession(session));
+        }
+        catch (AnalysisGameNotFoundException)
+        {
+            return AnalysisEndpointHelpers.NotFoundResult();
+        }
+        catch (AccessDeniedException)
+        {
+            return AnalysisEndpointHelpers.ForbidResult();
+        }
+    }
+
+    private static Task<IResult> DestroySession(
+        string id,
+        ClaimsPrincipal principal,
+        AnalysisSessionService service,
+        CancellationToken ct)
+    {
+        if (!AnalysisEndpointHelpers.TryGetUserId(principal, out string? userId))
+        {
+            return Task.FromResult(Results.Unauthorized());
+        }
+
+        try
+        {
+            service.DestroySessionAsync(id, userId, ct);
+            return Task.FromResult(Results.NoContent());
+        }
+        catch (SessionNotFoundException)
+        {
+            return Task.FromResult(AnalysisEndpointHelpers.SessionNotFoundResult());
+        }
+    }
+
+    private static async Task<IResult> Navigate(
+        string id,
+        [FromBody] NavigateRequest body,
+        ClaimsPrincipal principal,
+        AnalysisSessionService service,
+        CancellationToken ct)
+    {
+        if (!AnalysisEndpointHelpers.TryGetUserId(principal, out string? userId))
+        {
+            return Results.Unauthorized();
+        }
+
+        try
+        {
+            (int index, string fen) = await service.NavigateAsync(id, userId, body.Index, ct);
+            return Results.Ok(new NavigateResponse(index, fen));
+        }
+        catch (SessionNotFoundException)
+        {
+            return AnalysisEndpointHelpers.SessionNotFoundResult();
+        }
+        catch (NavigationOutOfRangeException)
+        {
+            return AnalysisEndpointHelpers.NavigationOutOfRangeResult();
+        }
+    }
+
+    private static async Task<IResult> PlayWhatif(
+        string id,
+        [FromBody] WhatifRequest body,
+        ClaimsPrincipal principal,
+        AnalysisSessionService service,
+        CancellationToken ct)
+    {
+        if (!AnalysisEndpointHelpers.TryGetUserId(principal, out string? userId))
+        {
+            return Results.Unauthorized();
+        }
+
+        try
+        {
+            (int whatifIndex, string fen) = await service.PlayWhatifAsync(id, userId, body.Move, ct);
+            return Results.Ok(new WhatifResponse(whatifIndex, fen));
+        }
+        catch (SessionNotFoundException)
+        {
+            return AnalysisEndpointHelpers.SessionNotFoundResult();
+        }
+        catch (InvalidWhatifMoveException ex)
+        {
+            return AnalysisEndpointHelpers.InvalidWhatifMoveResult(ex.Reason);
+        }
+    }
+
+    private static async Task<IResult> ResetWhatif(
+        string id,
+        ClaimsPrincipal principal,
+        AnalysisSessionService service,
+        CancellationToken ct)
+    {
+        if (!AnalysisEndpointHelpers.TryGetUserId(principal, out string? userId))
+        {
+            return Results.Unauthorized();
+        }
+
+        try
+        {
+            (int index, string fen) = await service.ResetWhatifAsync(id, userId, ct);
+            return Results.Ok(new NavigateResponse(index, fen));
+        }
+        catch (SessionNotFoundException)
+        {
+            return AnalysisEndpointHelpers.SessionNotFoundResult();
+        }
+    }
+
+    private static async Task<IResult> UndoLastWhatif(
+        string id,
+        ClaimsPrincipal principal,
+        AnalysisSessionService service,
+        CancellationToken ct)
+    {
+        if (!AnalysisEndpointHelpers.TryGetUserId(principal, out string? userId))
+        {
+            return Results.Unauthorized();
+        }
+
+        try
+        {
+            (int whatifIndex, string fen) = await service.UndoLastWhatifAsync(id, userId, ct);
+            return Results.Ok(new WhatifResponse(whatifIndex, fen));
+        }
+        catch (SessionNotFoundException)
+        {
+            return AnalysisEndpointHelpers.SessionNotFoundResult();
+        }
+        catch (WhatifEmptyException)
+        {
+            return AnalysisEndpointHelpers.WhatifEmptyResult();
+        }
+    }
+
+    private static async Task<IResult> GetWhatifPgn(
+        string id,
+        ClaimsPrincipal principal,
+        AnalysisSessionService service,
+        CancellationToken ct)
+    {
+        if (!AnalysisEndpointHelpers.TryGetUserId(principal, out string? userId))
+        {
+            return Results.Unauthorized();
+        }
+
+        try
+        {
+            string pgn = await service.GetWhatifPgnAsync(id, userId, ct);
+            return Results.Ok(new WhatifPgnResponse(pgn));
+        }
+        catch (SessionNotFoundException)
+        {
+            return AnalysisEndpointHelpers.SessionNotFoundResult();
+        }
+        catch (WhatifEmptyException)
+        {
+            return AnalysisEndpointHelpers.WhatifEmptyResult();
+        }
+    }
+
+    private static async Task<IResult> StartAnalysis(
+        string id,
+        [FromBody] StartAnalysisRequest body,
+        ClaimsPrincipal principal,
+        AnalysisSessionService service,
+        CancellationToken ct)
+    {
+        if (!AnalysisEndpointHelpers.TryGetUserId(principal, out string? userId))
+        {
+            return Results.Unauthorized();
+        }
+
+        try
+        {
+            await service.StartAnalysisAsync(id, userId, body.BotId, body.LineCount, ct);
+            return Results.NoContent();
+        }
+        catch (SessionNotFoundException)
+        {
+            return AnalysisEndpointHelpers.SessionNotFoundResult();
+        }
+    }
+
+    private static Task<IResult> StopAnalysis(
+        string id,
+        ClaimsPrincipal principal,
+        AnalysisSessionService service,
+        CancellationToken ct)
+    {
+        if (!AnalysisEndpointHelpers.TryGetUserId(principal, out string? userId))
+        {
+            return Task.FromResult(Results.Unauthorized());
+        }
+
+        try
+        {
+            service.StopAnalysisAsync(id, userId, ct);
+            return Task.FromResult(Results.NoContent());
+        }
+        catch (SessionNotFoundException)
+        {
+            return Task.FromResult(AnalysisEndpointHelpers.SessionNotFoundResult());
         }
     }
 }

@@ -39,15 +39,16 @@ internal sealed class AnalysisGameRepository(Database.DatabaseClient db) : IAnal
         return [.. response.Records.Select(FromStruct)];
     }
 
-    public async Task<int> CountByUserIdAsync(string userId, CancellationToken ct)
+    public async Task<long> CountByUserIdAsync(string userId, CancellationToken ct)
     {
-        Struct filter = new() { Fields = { ["user_id"] = Value.ForString(userId) } };
-
-        ListResponse response = await db.ListAsync(
-            new ListRequest { Collection = Collection, Filter = filter, Limit = 10000, Offset = 0 },
+        CountResponse resp = await db.CountAsync(
+            new CountRequest
+            {
+                Collection = Collection,
+                Filter = new Struct { Fields = { ["user_id"] = Value.ForString(userId) } },
+            },
             cancellationToken: ct);
-
-        return response.Records.Count;
+        return resp.Count;
     }
 
     public async Task<AnalysisGame> InsertAsync(AnalysisGame game, CancellationToken ct)
@@ -82,6 +83,7 @@ internal sealed class AnalysisGameRepository(Database.DatabaseClient db) : IAnal
                 ["user_id"] = Value.ForString(game.UserId),
                 ["source"] = Value.ForString(game.Source),
                 ["match_id"] = game.MatchId is not null ? Value.ForString(game.MatchId) : Value.ForNull(),
+                ["starting_fen"] = Value.ForString(game.StartingFen),
                 ["moves"] = Value.ForList(game.Moves.Select(Value.ForString).ToArray()),
                 ["fens"] = Value.ForList(game.Fens.Select(Value.ForString).ToArray()),
                 ["pgn"] = Value.ForString(game.Pgn),
@@ -101,11 +103,17 @@ internal sealed class AnalysisGameRepository(Database.DatabaseClient db) : IAnal
         bool hasMatchId = s.Fields.TryGetValue("match_id", out Value? mid)
             && mid.KindCase == Value.KindOneofCase.StringValue;
 
+        string startingFen = s.Fields.TryGetValue("starting_fen", out Value? sfv)
+            && sfv.KindCase == Value.KindOneofCase.StringValue
+            ? sfv.StringValue
+            : "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+
         return new AnalysisGame(
             Id: s.Fields["id"].StringValue,
             UserId: s.Fields["user_id"].StringValue,
             Source: s.Fields["source"].StringValue,
             MatchId: hasMatchId ? mid!.StringValue : null,
+            StartingFen: startingFen,
             Moves: [.. s.Fields["moves"].ListValue.Values.Select(v => v.StringValue)],
             Fens: [.. s.Fields["fens"].ListValue.Values.Select(v => v.StringValue)],
             Pgn: s.Fields["pgn"].StringValue,

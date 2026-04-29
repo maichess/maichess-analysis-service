@@ -6,6 +6,6 @@ namespace MaichessAnalysisService.Rest;
 [ExcludeFromCodeCoverage]
 internal sealed record GamesListResponse(
     [property: JsonPropertyName("games")] IReadOnlyList<GameSummaryResponse> Games,
-    [property: JsonPropertyName("total")] int Total,
+    [property: JsonPropertyName("total")] long Total,
     [property: JsonPropertyName("page")] int Page,
     [property: JsonPropertyName("page_size")] int PageSize);
