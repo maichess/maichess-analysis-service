@@ -14,7 +14,6 @@ COPY Domain/ Domain/
 COPY Data/ Data/
 COPY Services/ Services/
 COPY Rest/ Rest/
-COPY Grpc/ Grpc/
 COPY Program.cs ./
 RUN dotnet publish maichess-analysis-service.csproj \
     -c Release -o /app/publish --no-restore
