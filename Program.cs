@@ -1,5 +1,7 @@
 using System.Text;
 using Google.Protobuf.WellKnownTypes;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 using Grpc.Net.Client;
 using Maichess.Database.V1;
 using Maichess.Engine.V1;
@@ -69,6 +71,16 @@ builder.Services
 
 builder.Services.AddAuthorization();
 builder.Services.AddOpenApi();
+
+string otlpEndpoint = Environment.GetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT")
+    ?? "http://otel-collector:4317";
+
+builder.Services.AddOpenTelemetry()
+    .ConfigureResource(r => r.AddService("analysis-service"))
+    .WithTracing(t => t
+        .AddAspNetCoreInstrumentation()
+        .AddGrpcClientInstrumentation()
+        .AddOtlpExporter(o => o.Endpoint = new Uri(otlpEndpoint)));
 
 WebApplication app = builder.Build();
 
