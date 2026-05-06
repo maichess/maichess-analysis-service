@@ -1,7 +1,5 @@
 using System.Text;
 using Google.Protobuf.WellKnownTypes;
-using OpenTelemetry.Resources;
-using OpenTelemetry.Trace;
 using Grpc.Net.Client;
 using Maichess.Database.V1;
 using Maichess.Engine.V1;
@@ -13,6 +11,8 @@ using MaichessAnalysisService.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 using SocketGrpc = Socket.V1.Socket;
 
 DotNetEnv.Env.Load();
