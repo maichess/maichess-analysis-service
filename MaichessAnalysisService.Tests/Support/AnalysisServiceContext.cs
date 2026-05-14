@@ -22,6 +22,8 @@ internal sealed class AnalysisServiceContext
 
     internal (IReadOnlyList<AnalysisGame> Games, long Total, int Page, int PageSize)? LastListResult { get; set; }
 
+    internal (IReadOnlyList<UserMatchSummary> Matches, long Total, int Page, int PageSize)? LastUserMatchesResult { get; set; }
+
     internal Exception? LastException { get; set; }
 
     internal AnalysisServiceContext()
@@ -149,6 +151,53 @@ internal sealed class AnalysisServiceContext
                 Arg.Any<DateTime?>(),
                 Arg.Any<CancellationToken>())
             .Returns(GrpcHelper.GrpcCall(response));
+    }
+
+    internal void SetupUserMatches(
+        string userId,
+        IReadOnlyList<UserMatchFixture> whiteMatches,
+        IReadOnlyList<UserMatchFixture> blackMatches)
+    {
+        SetupListMatchesByField("white_user_id", userId, whiteMatches);
+        SetupListMatchesByField("black_user_id", userId, blackMatches);
+    }
+
+    private void SetupListMatchesByField(string field, string userId, IReadOnlyList<UserMatchFixture> matches)
+    {
+        ListResponse response = new();
+        foreach (UserMatchFixture m in matches)
+        {
+            response.Records.Add(BuildMatchRecord(m));
+        }
+
+        DbClient
+            .ListAsync(
+                Arg.Is<ListRequest>(r =>
+                    r.Collection == "matches" &&
+                    r.Filter.Fields.ContainsKey(field) &&
+                    r.Filter.Fields[field].StringValue == userId),
+                Arg.Any<Metadata>(),
+                Arg.Any<DateTime?>(),
+                Arg.Any<CancellationToken>())
+            .Returns(GrpcHelper.GrpcCall(response));
+    }
+
+    private static Struct BuildMatchRecord(UserMatchFixture m)
+    {
+        Struct s = new();
+        s.Fields["id"] = Value.ForString(m.Id);
+        s.Fields["status"] = Value.ForString(m.Status);
+        s.Fields["white_user_id"] = m.WhiteUserId is not null ? Value.ForString(m.WhiteUserId) : Value.ForNull();
+        s.Fields["black_user_id"] = m.BlackUserId is not null ? Value.ForString(m.BlackUserId) : Value.ForNull();
+        s.Fields["white_bot_id"] = m.WhiteBotId is not null ? Value.ForString(m.WhiteBotId) : Value.ForNull();
+        s.Fields["black_bot_id"] = m.BlackBotId is not null ? Value.ForString(m.BlackBotId) : Value.ForNull();
+        s.Fields["time_format_id"] = Value.ForString(m.TimeFormatId);
+        s.Fields["time_format_base_ms"] = Value.ForNumber(m.BaseMs);
+        s.Fields["time_format_increment_ms"] = Value.ForNumber(m.IncrementMs);
+        s.Fields["time_format_category"] = Value.ForString(m.Category);
+        s.Fields["last_move_at"] = Value.ForString(m.LastMoveAt.ToString("O", System.Globalization.CultureInfo.InvariantCulture));
+        s.Fields["moves"] = Value.ForList([.. m.Moves.Select(Value.ForString)]);
+        return s;
     }
 
     internal void SetupMatchNotFound(string matchId)

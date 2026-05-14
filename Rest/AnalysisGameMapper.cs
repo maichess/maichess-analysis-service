@@ -32,4 +32,18 @@ internal static class AnalysisGameMapper
             game.Moves,
             game.Fens,
             game.Pgn);
+
+    internal static UserMatchSummaryResponse ToUserMatchSummary(UserMatchSummary match) =>
+        new(
+            match.MatchId,
+            match.White,
+            match.Black,
+            match.Status,
+            new UserMatchTimeFormatResponse(
+                match.TimeFormat.Id,
+                match.TimeFormat.BaseMs,
+                match.TimeFormat.IncrementMs,
+                match.TimeFormat.Category),
+            match.MoveCount,
+            match.FinishedAtMs);
 }

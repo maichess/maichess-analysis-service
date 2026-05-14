@@ -22,6 +22,9 @@ internal static class AnalysisEndpoints
         games.MapPost("/from-fen", ImportFromFen);
         games.MapDelete("/{id}", DeleteGame);
 
+        RouteGroupBuilder matches = routes.MapGroup("/matches").RequireAuthorization();
+        matches.MapGet(string.Empty, ListUserMatches);
+
         RouteGroupBuilder analysis = routes.MapGroup("/analysis").RequireAuthorization();
         analysis.MapGet("/config", GetAnalysisConfig);
 
@@ -37,6 +40,28 @@ internal static class AnalysisEndpoints
         sessions.MapDelete("/{id}/analysis", StopAnalysis);
 
         return routes;
+    }
+
+    private static async Task<IResult> ListUserMatches(
+        ClaimsPrincipal principal,
+        AnalysisGameService service,
+        [FromQuery] int page = 1,
+        [FromQuery(Name = "page_size")] int pageSize = 20,
+        CancellationToken ct = default)
+    {
+        if (!AnalysisEndpointHelpers.TryGetUserId(principal, out string? userId))
+        {
+            return Results.Unauthorized();
+        }
+
+        (IReadOnlyList<UserMatchSummary> matches, long total, int p, int ps) =
+            await service.ListUserMatchesAsync(userId, page, pageSize, ct);
+
+        return Results.Ok(new UserMatchesListResponse(
+            [.. matches.Select(AnalysisGameMapper.ToUserMatchSummary)],
+            total,
+            p,
+            ps));
     }
 
     private static async Task<IResult> ListGames(

@@ -136,6 +136,47 @@ internal sealed class AnalysisGameService(
         return await repo.InsertAsync(game, ct);
     }
 
+    internal async Task<(IReadOnlyList<UserMatchSummary> Matches, long Total, int Page, int PageSize)>
+        ListUserMatchesAsync(string userId, int page, int pageSize, CancellationToken ct)
+    {
+        pageSize = Math.Clamp(pageSize, 1, 100);
+        page = Math.Max(1, page);
+
+        ListResponse[] both = await Task.WhenAll(
+            ListMatchesByFieldAsync("white_user_id", userId, ct),
+            ListMatchesByFieldAsync("black_user_id", userId, ct));
+
+        Dictionary<string, Struct> deduped = new(StringComparer.Ordinal);
+        foreach (Struct record in both[0].Records.Concat(both[1].Records))
+        {
+            string? id = GetStringField(record, "id");
+            if (id is null || deduped.ContainsKey(id))
+            {
+                continue;
+            }
+
+            string status = GetStringField(record, "status") ?? string.Empty;
+            if (status == "ongoing" || string.IsNullOrEmpty(status))
+            {
+                continue;
+            }
+
+            deduped[id] = record;
+        }
+
+        List<UserMatchSummary> all = [.. deduped.Values
+            .Select(BuildUserMatchSummary)
+            .OrderByDescending(m => m.FinishedAtMs)];
+
+        long total = all.Count;
+        int offset = (page - 1) * pageSize;
+        IReadOnlyList<UserMatchSummary> pageItems = offset >= all.Count
+            ? []
+            : all.Skip(offset).Take(pageSize).ToList();
+
+        return (pageItems, total, page, pageSize);
+    }
+
     internal async Task<AnalysisGame> ImportFromMatchAsync(string matchId, string userId, CancellationToken ct)
     {
         GetResponse matchResp;
@@ -305,5 +346,71 @@ internal sealed class AnalysisGameService(
 
         sb.Append(result);
         return sb.ToString().TrimEnd();
+    }
+
+    private static UserMatchSummary BuildUserMatchSummary(Struct record)
+    {
+        string? id = GetStringField(record, "id");
+        string status = GetStringField(record, "status") ?? string.Empty;
+        Dictionary<string, string> white = BuildPlayerInfo(
+            GetStringField(record, "white_user_id"),
+            GetStringField(record, "white_bot_id"));
+        Dictionary<string, string> black = BuildPlayerInfo(
+            GetStringField(record, "black_user_id"),
+            GetStringField(record, "black_bot_id"));
+
+        List<string> moves = GetStringList(record, "moves");
+        UserMatchTimeFormat tf = ReadTimeFormat(record);
+        long finishedAtMs = ParseLastMoveAtMs(record);
+
+        return new UserMatchSummary(
+            MatchId: id ?? string.Empty,
+            White: white,
+            Black: black,
+            Status: status,
+            TimeFormat: tf,
+            MoveCount: moves.Count,
+            FinishedAtMs: finishedAtMs);
+    }
+
+    private static UserMatchTimeFormat ReadTimeFormat(Struct record)
+    {
+        string? id = GetStringField(record, "time_format_id");
+        if (id is not null)
+        {
+            return new UserMatchTimeFormat(
+                Id: id,
+                BaseMs: (long)(record.Fields.TryGetValue("time_format_base_ms", out Value? b) ? b.NumberValue : 0),
+                IncrementMs: (long)(record.Fields.TryGetValue("time_format_increment_ms", out Value? inc) ? inc.NumberValue : 0),
+                Category: GetStringField(record, "time_format_category") ?? string.Empty);
+        }
+
+        string legacy = GetStringField(record, "time_control") ?? "blitz";
+        (string fallbackId, long baseMs) = legacy switch
+        {
+            "bullet" => ("3+0", 180_000L),
+            "blitz" => ("5+0", 300_000L),
+            "rapid" => ("10+0", 600_000L),
+            "classical" => ("30+0", 1_800_000L),
+            _ => ("5+0", 300_000L),
+        };
+        return new UserMatchTimeFormat(fallbackId, baseMs, 0, legacy);
+    }
+
+    private static long ParseLastMoveAtMs(Struct record)
+    {
+        string? raw = GetStringField(record, "last_move_at");
+        return raw is not null && DateTimeOffset.TryParse(raw, CultureInfo.InvariantCulture, out DateTimeOffset dt)
+            ? dt.ToUnixTimeMilliseconds()
+            : 0L;
+    }
+
+    private Task<ListResponse> ListMatchesByFieldAsync(string field, string userId, CancellationToken ct)
+    {
+        Struct filter = new();
+        filter.Fields[field] = Value.ForString(userId);
+        return db.ListAsync(
+            new ListRequest { Collection = "matches", Filter = filter },
+            cancellationToken: ct).ResponseAsync;
     }
 }
