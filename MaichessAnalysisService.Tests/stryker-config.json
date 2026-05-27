@@ -1,0 +1,31 @@
+{
+  "stryker-config": {
+    "project": "maichess-analysis-service.csproj",
+    "solution": "../maichess-analysis-service.sln",
+    "test-projects": [
+      "MaichessAnalysisService.Tests.csproj"
+    ],
+    "reporters": [
+      "progress",
+      "html"
+    ],
+    "mutation-level": "Standard",
+    "thresholds": {
+      "high": 80,
+      "low": 60,
+      "break": 0
+    },
+    "mutate": [
+      "!**/Program.cs",
+      "!**/*.g.cs",
+      "!**/*.generated.cs",
+      "!**/Rest/**/*Endpoints.cs",
+      "!**/Data/AnalysisGameRepository.cs",
+      "!**/Data/AnalysisResultRepository.cs"
+    ],
+    "ignore-methods": [
+      "*Log*",
+      "Console.Write*"
+    ]
+  }
+}

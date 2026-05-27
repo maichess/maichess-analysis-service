@@ -125,6 +125,15 @@ For `GET /sessions/{id}/whatif/pgn`:
 - Coverlet: exclude `Program.cs`, `*.g.cs`, `*.generated.cs`.
 - Run `dotnet test -p:CollectCoverage=true` before marking any task complete.
 
+### Mutation testing
+
+Stryker.NET is wired up as a local dotnet tool. Config lives in
+`MaichessAnalysisService.Tests/stryker-config.json`; the same files excluded
+from coverage are also excluded from mutation. Run via `dotnet tool restore`
+then `dotnet stryker` inside the test project directory. See `README.md` for
+details. Mutation testing is not required to pass on every change, but use it
+when investigating whether tests genuinely exercise behaviour.
+
 ## Environment Variables
 
 | Config key | Description |
