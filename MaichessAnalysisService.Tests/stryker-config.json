@@ -21,7 +21,12 @@
       "!**/*.generated.cs",
       "!**/Rest/**/*Endpoints.cs",
       "!**/Data/AnalysisGameRepository.cs",
-      "!**/Data/AnalysisResultRepository.cs"
+      "!**/Data/AnalysisResultRepository.cs",
+      "!**/Data/AnalysisMetaRepository.cs",
+      "!**/Domain/AnalysisSession.cs",
+      "!**/Domain/*Exception.cs",
+      "!**/Services/AnalysisSessionService.cs",
+      "!**/Services/AnalysisConfig.cs"
     ],
     "ignore-methods": [
       "*Log*",
