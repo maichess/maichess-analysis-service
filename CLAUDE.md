@@ -11,6 +11,7 @@ clients via the Socket Service.
   - `protos/engine-service/v1/bots.proto` — `AnalyzePosition`, `ListBots`
   - `protos/move-validator-service/v1/moves.proto` — `ValidateMoveSan`, `ConvertSequenceToSan`, `ValidateMove`
   - `protos/socket-service/v1/socket.proto` — `EmitEvent`
+  - `protos/user-service/v1/users.proto` — `GetUser` (username resolution for match imports)
 - **Generated stubs:** `Maichess.PlatformProtos` NuGet (see `maichess-api-contracts/dotnet/`)
 
 The `analysis.proto` gRPC server endpoint has been removed. This service exposes REST only.
@@ -142,6 +143,7 @@ when investigating whether tests genuinely exercise behaviour.
 | `Services:EngineService` | Engine Service gRPC address |
 | `Services:MoveValidatorService` | Move Validator gRPC address |
 | `Services:SocketService` | Socket Service gRPC address |
+| `Services:UserService` | User Service gRPC address (username resolution) |
 | `Jwt:Key` | JWT signing key (same value as other services) |
 | `Analysis:DefaultBotId` | Bot ID whose analysis results are cached. Mismatch triggers cache scrape on startup. |
 | `Analysis:DefaultLineCount` | Line count used for caching (analysis results are only written when `line_count` matches this value) |

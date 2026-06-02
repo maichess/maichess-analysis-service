@@ -1,7 +1,9 @@
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using Maichess.Database.V1;
+using Maichess.Engine.V1;
 using Maichess.MoveValidator.V1;
+using Maichess.User.V1;
 using MaichessAnalysisService.Domain;
 using MaichessAnalysisService.Services;
 using NSubstitute;
@@ -16,6 +18,10 @@ internal sealed class AnalysisServiceContext
 
     internal Moves.MovesClient MovesClient { get; } = Substitute.For<Moves.MovesClient>();
 
+    internal Users.UsersClient UsersClient { get; } = Substitute.For<Users.UsersClient>();
+
+    internal Bots.BotsClient BotsClient { get; } = Substitute.For<Bots.BotsClient>();
+
     internal AnalysisGameService Service { get; }
 
     internal AnalysisGame? LastGameResult { get; set; }
@@ -28,7 +34,10 @@ internal sealed class AnalysisServiceContext
 
     internal AnalysisServiceContext()
     {
-        Service = new AnalysisGameService(Repository, DbClient, MovesClient);
+        Service = new AnalysisGameService(Repository, DbClient, MovesClient, UsersClient, BotsClient);
+
+        SetupDefaultUserResolution();
+        SetupDefaultBotResolution();
 
         Repository.InsertAsync(Arg.Any<AnalysisGame>(), Arg.Any<CancellationToken>())
             .Returns(ci => Task.FromResult(ci.Arg<AnalysisGame>() with { Id = "game-1" }));
@@ -210,6 +219,43 @@ internal sealed class AnalysisServiceContext
                 Arg.Any<CancellationToken>())
             .Returns<AsyncUnaryCall<GetResponse>>(_ =>
                 throw new RpcException(new Status(StatusCode.NotFound, "not found")));
+    }
+
+    internal void SetupUserResolution(string userId, string username)
+    {
+        GetUserResponse response = new() { User = new User { Id = userId, Username = username } };
+        UsersClient
+            .GetUserAsync(
+                Arg.Is<GetUserRequest>(r => r.UserId == userId),
+                Arg.Any<Metadata>(),
+                Arg.Any<DateTime?>(),
+                Arg.Any<CancellationToken>())
+            .Returns(GrpcHelper.GrpcCall(response));
+    }
+
+    private void SetupDefaultUserResolution()
+    {
+        GetUserResponse fallback = new() { User = new User { Id = "unknown", Username = "Unknown" } };
+        UsersClient
+            .GetUserAsync(
+                Arg.Any<GetUserRequest>(),
+                Arg.Any<Metadata>(),
+                Arg.Any<DateTime?>(),
+                Arg.Any<CancellationToken>())
+            .Returns(GrpcHelper.GrpcCall(fallback));
+    }
+
+    private void SetupDefaultBotResolution()
+    {
+        ListBotsResponse response = new();
+        response.Bots.Add(new Bot { Id = "stockfish-3", Name = "Stockfish Level 3", Elo = 1400 });
+        BotsClient
+            .ListBotsAsync(
+                Arg.Any<ListBotsRequest>(),
+                Arg.Any<Metadata>(),
+                Arg.Any<DateTime?>(),
+                Arg.Any<CancellationToken>())
+            .Returns(GrpcHelper.GrpcCall(response));
     }
 
     internal static AnalysisGame BuildGame(

@@ -4,7 +4,9 @@ using System.Text.RegularExpressions;
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using Maichess.Database.V1;
+using Maichess.Engine.V1;
 using Maichess.MoveValidator.V1;
+using Maichess.User.V1;
 using MaichessAnalysisService.Domain;
 
 namespace MaichessAnalysisService.Services;
@@ -12,7 +14,9 @@ namespace MaichessAnalysisService.Services;
 internal sealed class AnalysisGameService(
     IAnalysisGameRepository repo,
     Database.DatabaseClient db,
-    Moves.MovesClient movesClient)
+    Moves.MovesClient movesClient,
+    Users.UsersClient usersClient,
+    Bots.BotsClient botsClient)
 {
     private const string InitialFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
@@ -164,9 +168,9 @@ internal sealed class AnalysisGameService(
             deduped[id] = record;
         }
 
-        List<UserMatchSummary> all = [.. deduped.Values
-            .Select(BuildUserMatchSummary)
-            .OrderByDescending(m => m.FinishedAtMs)];
+        UserMatchSummary[] resolved = await Task.WhenAll(
+            deduped.Values.Select(r => BuildUserMatchSummaryAsync(r, ct)));
+        List<UserMatchSummary> all = [.. resolved.OrderByDescending(m => m.FinishedAtMs)];
 
         long total = all.Count;
         int offset = (page - 1) * pageSize;
@@ -226,8 +230,8 @@ internal sealed class AnalysisGameService(
             sanMoves = [.. sanResp.SanMoves];
         }
 
-        Dictionary<string, string> whiteInfo = BuildPlayerInfo(whiteUserId, whiteBotId);
-        Dictionary<string, string> blackInfo = BuildPlayerInfo(blackUserId, blackBotId);
+        Dictionary<string, string> whiteInfo = await ResolvePlayerInfoAsync(whiteUserId, whiteBotId, ct);
+        Dictionary<string, string> blackInfo = await ResolvePlayerInfoAsync(blackUserId, blackBotId, ct);
 
         string result = status switch
         {
@@ -318,9 +322,13 @@ internal sealed class AnalysisGameService(
         List<string> sanMoves,
         string result)
     {
-        string whiteName = white.TryGetValue("user_id", out string? wid) ? wid
+        string whiteName = white.TryGetValue("username", out string? wun) ? wun
+            : white.TryGetValue("name", out string? wn) ? wn
+            : white.TryGetValue("user_id", out string? wid) ? wid
             : white.TryGetValue("bot_id", out string? wbid) ? wbid : "?";
-        string blackName = black.TryGetValue("user_id", out string? bid) ? bid
+        string blackName = black.TryGetValue("username", out string? bun) ? bun
+            : black.TryGetValue("name", out string? bn) ? bn
+            : black.TryGetValue("user_id", out string? bid) ? bid
             : black.TryGetValue("bot_id", out string? bbid) ? bbid : "?";
 
         StringBuilder sb = new();
@@ -346,31 +354,6 @@ internal sealed class AnalysisGameService(
 
         sb.Append(result);
         return sb.ToString().TrimEnd();
-    }
-
-    private static UserMatchSummary BuildUserMatchSummary(Struct record)
-    {
-        string? id = GetStringField(record, "id");
-        string status = GetStringField(record, "status") ?? string.Empty;
-        Dictionary<string, string> white = BuildPlayerInfo(
-            GetStringField(record, "white_user_id"),
-            GetStringField(record, "white_bot_id"));
-        Dictionary<string, string> black = BuildPlayerInfo(
-            GetStringField(record, "black_user_id"),
-            GetStringField(record, "black_bot_id"));
-
-        List<string> moves = GetStringList(record, "moves");
-        UserMatchTimeFormat tf = ReadTimeFormat(record);
-        long finishedAtMs = ParseLastMoveAtMs(record);
-
-        return new UserMatchSummary(
-            MatchId: id ?? string.Empty,
-            White: white,
-            Black: black,
-            Status: status,
-            TimeFormat: tf,
-            MoveCount: moves.Count,
-            FinishedAtMs: finishedAtMs);
     }
 
     private static UserMatchTimeFormat ReadTimeFormat(Struct record)
@@ -412,5 +395,80 @@ internal sealed class AnalysisGameService(
         return db.ListAsync(
             new ListRequest { Collection = "matches", Filter = filter },
             cancellationToken: ct).ResponseAsync;
+    }
+
+    private async Task<Dictionary<string, string>> ResolvePlayerInfoAsync(
+        string? userId,
+        string? botId,
+        CancellationToken ct)
+    {
+        if (userId is not null && userId.Length > 0)
+        {
+            Dictionary<string, string> info = new() { ["user_id"] = userId };
+            try
+            {
+                GetUserResponse userResp = await usersClient.GetUserAsync(
+                    new GetUserRequest { UserId = userId },
+                    cancellationToken: ct);
+                info["username"] = userResp.User.Username;
+            }
+            catch (RpcException)
+            {
+            }
+
+            return info;
+        }
+
+        if (botId is not null && botId.Length > 0)
+        {
+            Dictionary<string, string> info = new() { ["bot_id"] = botId };
+            try
+            {
+                ListBotsResponse bots = await botsClient.ListBotsAsync(
+                    new ListBotsRequest(),
+                    cancellationToken: ct);
+                Bot? bot = bots.Bots.FirstOrDefault(b => b.Id == botId);
+                if (bot is not null)
+                {
+                    info["name"] = bot.Name;
+                }
+            }
+            catch (RpcException)
+            {
+            }
+
+            return info;
+        }
+
+        return [];
+    }
+
+    private async Task<UserMatchSummary> BuildUserMatchSummaryAsync(
+        Struct record,
+        CancellationToken ct)
+    {
+        string? id = GetStringField(record, "id");
+        string status = GetStringField(record, "status") ?? string.Empty;
+        Dictionary<string, string> white = await ResolvePlayerInfoAsync(
+            GetStringField(record, "white_user_id"),
+            GetStringField(record, "white_bot_id"),
+            ct);
+        Dictionary<string, string> black = await ResolvePlayerInfoAsync(
+            GetStringField(record, "black_user_id"),
+            GetStringField(record, "black_bot_id"),
+            ct);
+
+        List<string> moves = GetStringList(record, "moves");
+        UserMatchTimeFormat tf = ReadTimeFormat(record);
+        long finishedAtMs = ParseLastMoveAtMs(record);
+
+        return new UserMatchSummary(
+            MatchId: id ?? string.Empty,
+            White: white,
+            Black: black,
+            Status: status,
+            TimeFormat: tf,
+            MoveCount: moves.Count,
+            FinishedAtMs: finishedAtMs);
     }
 }

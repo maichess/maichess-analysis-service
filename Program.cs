@@ -4,6 +4,7 @@ using Grpc.Net.Client;
 using Maichess.Database.V1;
 using Maichess.Engine.V1;
 using Maichess.MoveValidator.V1;
+using Maichess.User.V1;
 using MaichessAnalysisService.Data;
 using MaichessAnalysisService.Domain;
 using MaichessAnalysisService.Rest;
@@ -26,6 +27,8 @@ string moveValidatorUrl = builder.Configuration["Services:MoveValidatorService"]
     ?? throw new InvalidOperationException("Services:MoveValidatorService is not configured");
 string socketUrl = builder.Configuration["Services:SocketService"]
     ?? throw new InvalidOperationException("Services:SocketService is not configured");
+string userServiceUrl = builder.Configuration["Services:UserService"]
+    ?? throw new InvalidOperationException("Services:UserService is not configured");
 string jwtKey = builder.Configuration["Jwt:Key"]
     ?? throw new InvalidOperationException("Jwt:Key is not configured");
 
@@ -33,6 +36,7 @@ builder.Services.AddSingleton(new Database.DatabaseClient(GrpcChannel.ForAddress
 builder.Services.AddSingleton(new Bots.BotsClient(GrpcChannel.ForAddress(engineUrl)));
 builder.Services.AddSingleton(new Moves.MovesClient(GrpcChannel.ForAddress(moveValidatorUrl)));
 builder.Services.AddSingleton(new SocketGrpc.SocketClient(GrpcChannel.ForAddress(socketUrl)));
+builder.Services.AddSingleton(new Users.UsersClient(GrpcChannel.ForAddress(userServiceUrl)));
 
 builder.Services.AddSingleton<IAnalysisGameRepository, AnalysisGameRepository>();
 builder.Services.AddSingleton<IAnalysisResultRepository, AnalysisResultRepository>();
