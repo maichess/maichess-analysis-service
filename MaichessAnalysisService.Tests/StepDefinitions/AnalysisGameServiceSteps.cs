@@ -78,6 +78,10 @@ internal sealed class AnalysisGameServiceSteps(AnalysisServiceContext context)
     public void GivenMatchWithNoWhiteUserBlack(string matchId, string status, string userId) =>
         context.SetupMatch(matchId, status, null, userId, null, null, [], [InitialFen]);
 
+    [Given(@"match ""([^""]*)"" exists with status ""([^""]*)"" and white bot ""([^""]*)"" and black bot ""([^""]*)"" created by ""([^""]*)""")]
+    public void GivenBotVsBotMatchCreatedBy(string matchId, string status, string whiteBot, string blackBot, string creatorId) =>
+        context.SetupMatch(matchId, status, null, null, whiteBot, blackBot, [], [InitialFen], creatorId);
+
     [Given(@"match ""([^""]*)"" does not exist")]
     public void GivenMatchDoesNotExist(string matchId) =>
         context.SetupMatchNotFound(matchId);

@@ -14,9 +14,20 @@ Feature: Import From Match
     When "user-1" imports match "match-2"
     Then a MatchStillOngoingException is thrown
 
-  Scenario: Import by non-participant throws MatchAccessDeniedException
+  Scenario: Import by non-participant non-creator throws MatchAccessDeniedException
     Given match "match-3" exists with status "white_won" and white user "user-1" and black user "user-2"
     When "outsider" imports match "match-3"
+    Then a MatchAccessDeniedException is thrown
+
+  Scenario: Creator of a bot-vs-bot match can import it even though they played neither colour
+    Given match "match-3b" exists with status "white_won" and white bot "bot-1" and black bot "bot-2" created by "user-1"
+    When "user-1" imports match "match-3b"
+    Then the result game source is "match"
+    And the result game match id is "match-3b"
+
+  Scenario: Non-creator outsider cannot import a bot-vs-bot match
+    Given match "match-3c" exists with status "white_won" and white bot "bot-1" and black bot "bot-2" created by "user-1"
+    When "outsider" imports match "match-3c"
     Then a MatchAccessDeniedException is thrown
 
   Scenario: Match not found throws AnalysisGameNotFoundException

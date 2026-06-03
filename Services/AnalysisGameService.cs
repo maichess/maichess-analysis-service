@@ -207,9 +207,13 @@ internal sealed class AnalysisGameService(
         string? blackUserId = GetStringField(match, "black_user_id");
         string? whiteBotId = GetStringField(match, "white_bot_id");
         string? blackBotId = GetStringField(match, "black_bot_id");
+        string? createdByUserId = GetStringField(match, "created_by_user_id");
 
-        bool isParticipant = (whiteUserId == userId) || (blackUserId == userId);
-        if (!isParticipant)
+        // A user may import a match they played (either colour) or one they
+        // started. The latter covers bot-vs-bot games they spawned, which appear
+        // in their Past Matches via created_by yet occupy neither colour.
+        bool isAuthorized = whiteUserId == userId || blackUserId == userId || createdByUserId == userId;
+        if (!isAuthorized)
         {
             throw new MatchAccessDeniedException();
         }

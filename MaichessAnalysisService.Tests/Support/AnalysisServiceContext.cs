@@ -125,10 +125,16 @@ internal sealed class AnalysisServiceContext
         string? whiteBotId,
         string? blackBotId,
         IReadOnlyList<string> moves,
-        IReadOnlyList<string> fenHistory)
+        IReadOnlyList<string> fenHistory,
+        string? createdByUserId = null)
     {
         Struct matchStruct = new();
         matchStruct.Fields["status"] = Value.ForString(status);
+        if (createdByUserId is not null)
+        {
+            matchStruct.Fields["created_by_user_id"] = Value.ForString(createdByUserId);
+        }
+
         if (whiteUserId is not null)
         {
             matchStruct.Fields["white_user_id"] = Value.ForString(whiteUserId);

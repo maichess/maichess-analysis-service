@@ -165,14 +165,14 @@ namespace MaichessAnalysisService.Tests.Features
             await this.ScenarioCleanupAsync();
         }
         
-        [Xunit.SkippableFactAttribute(DisplayName="Import by non-participant throws MatchAccessDeniedException")]
+        [Xunit.SkippableFactAttribute(DisplayName="Import by non-participant non-creator throws MatchAccessDeniedException")]
         [Xunit.TraitAttribute("FeatureTitle", "Import From Match")]
-        [Xunit.TraitAttribute("Description", "Import by non-participant throws MatchAccessDeniedException")]
-        public async System.Threading.Tasks.Task ImportByNon_ParticipantThrowsMatchAccessDeniedException()
+        [Xunit.TraitAttribute("Description", "Import by non-participant non-creator throws MatchAccessDeniedException")]
+        public async System.Threading.Tasks.Task ImportByNon_ParticipantNon_CreatorThrowsMatchAccessDeniedException()
         {
             string[] tagsOfScenario = ((string[])(null));
             System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
-            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Import by non-participant throws MatchAccessDeniedException", null, tagsOfScenario, argumentsOfScenario, featureTags);
+            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Import by non-participant non-creator throws MatchAccessDeniedException", null, tagsOfScenario, argumentsOfScenario, featureTags);
 #line 17
   this.ScenarioInitialize(scenarioInfo);
 #line hidden
@@ -197,14 +197,17 @@ namespace MaichessAnalysisService.Tests.Features
             await this.ScenarioCleanupAsync();
         }
         
-        [Xunit.SkippableFactAttribute(DisplayName="Match not found throws AnalysisGameNotFoundException")]
+        [Xunit.SkippableFactAttribute(DisplayName=("Creator of a bot-vs-bot match can import it even though they played neither colou" +
+            "r"))]
         [Xunit.TraitAttribute("FeatureTitle", "Import From Match")]
-        [Xunit.TraitAttribute("Description", "Match not found throws AnalysisGameNotFoundException")]
-        public async System.Threading.Tasks.Task MatchNotFoundThrowsAnalysisGameNotFoundException()
+        [Xunit.TraitAttribute("Description", ("Creator of a bot-vs-bot match can import it even though they played neither colou" +
+            "r"))]
+        public async System.Threading.Tasks.Task CreatorOfABot_Vs_BotMatchCanImportItEvenThoughTheyPlayedNeitherColour()
         {
             string[] tagsOfScenario = ((string[])(null));
             System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
-            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Match not found throws AnalysisGameNotFoundException", null, tagsOfScenario, argumentsOfScenario, featureTags);
+            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo(("Creator of a bot-vs-bot match can import it even though they played neither colou" +
+                    "r"), null, tagsOfScenario, argumentsOfScenario, featureTags);
 #line 22
   this.ScenarioInitialize(scenarioInfo);
 #line hidden
@@ -216,12 +219,79 @@ namespace MaichessAnalysisService.Tests.Features
             {
                 await this.ScenarioStartAsync();
 #line 23
-    await testRunner.GivenAsync("match \"missing\" does not exist", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
+    await testRunner.GivenAsync(("match \"match-3b\" exists with status \"white_won\" and white bot \"bot-1\" and black b" +
+                        "ot \"bot-2\" created by \"user-1\""), ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
 #line hidden
 #line 24
-    await testRunner.WhenAsync("\"user-1\" imports match \"missing\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+    await testRunner.WhenAsync("\"user-1\" imports match \"match-3b\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
 #line 25
+    await testRunner.ThenAsync("the result game source is \"match\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+#line hidden
+#line 26
+    await testRunner.AndAsync("the result game match id is \"match-3b\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+            }
+            await this.ScenarioCleanupAsync();
+        }
+        
+        [Xunit.SkippableFactAttribute(DisplayName="Non-creator outsider cannot import a bot-vs-bot match")]
+        [Xunit.TraitAttribute("FeatureTitle", "Import From Match")]
+        [Xunit.TraitAttribute("Description", "Non-creator outsider cannot import a bot-vs-bot match")]
+        public async System.Threading.Tasks.Task Non_CreatorOutsiderCannotImportABot_Vs_BotMatch()
+        {
+            string[] tagsOfScenario = ((string[])(null));
+            System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
+            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Non-creator outsider cannot import a bot-vs-bot match", null, tagsOfScenario, argumentsOfScenario, featureTags);
+#line 28
+  this.ScenarioInitialize(scenarioInfo);
+#line hidden
+            if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
+            {
+                testRunner.SkipScenario();
+            }
+            else
+            {
+                await this.ScenarioStartAsync();
+#line 29
+    await testRunner.GivenAsync(("match \"match-3c\" exists with status \"white_won\" and white bot \"bot-1\" and black b" +
+                        "ot \"bot-2\" created by \"user-1\""), ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
+#line hidden
+#line 30
+    await testRunner.WhenAsync("\"outsider\" imports match \"match-3c\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line hidden
+#line 31
+    await testRunner.ThenAsync("a MatchAccessDeniedException is thrown", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+#line hidden
+            }
+            await this.ScenarioCleanupAsync();
+        }
+        
+        [Xunit.SkippableFactAttribute(DisplayName="Match not found throws AnalysisGameNotFoundException")]
+        [Xunit.TraitAttribute("FeatureTitle", "Import From Match")]
+        [Xunit.TraitAttribute("Description", "Match not found throws AnalysisGameNotFoundException")]
+        public async System.Threading.Tasks.Task MatchNotFoundThrowsAnalysisGameNotFoundException()
+        {
+            string[] tagsOfScenario = ((string[])(null));
+            System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
+            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Match not found throws AnalysisGameNotFoundException", null, tagsOfScenario, argumentsOfScenario, featureTags);
+#line 33
+  this.ScenarioInitialize(scenarioInfo);
+#line hidden
+            if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
+            {
+                testRunner.SkipScenario();
+            }
+            else
+            {
+                await this.ScenarioStartAsync();
+#line 34
+    await testRunner.GivenAsync("match \"missing\" does not exist", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
+#line hidden
+#line 35
+    await testRunner.WhenAsync("\"user-1\" imports match \"missing\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line hidden
+#line 36
     await testRunner.ThenAsync("an AnalysisGameNotFoundException is thrown", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
             }
@@ -236,7 +306,7 @@ namespace MaichessAnalysisService.Tests.Features
             string[] tagsOfScenario = ((string[])(null));
             System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
             global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("BlackWon match with bot white imports with correct result", null, tagsOfScenario, argumentsOfScenario, featureTags);
-#line 27
+#line 38
   this.ScenarioInitialize(scenarioInfo);
 #line hidden
             if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
@@ -246,14 +316,14 @@ namespace MaichessAnalysisService.Tests.Features
             else
             {
                 await this.ScenarioStartAsync();
-#line 28
+#line 39
     await testRunner.GivenAsync(("match \"match-5\" exists with status \"black_won\" and white bot \"bot-1\" and black us" +
                         "er \"user-1\""), ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
 #line hidden
-#line 29
+#line 40
     await testRunner.WhenAsync("\"user-1\" imports match \"match-5\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
-#line 30
+#line 41
     await testRunner.ThenAsync("the result game result is \"0-1\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
             }
@@ -268,7 +338,7 @@ namespace MaichessAnalysisService.Tests.Features
             string[] tagsOfScenario = ((string[])(null));
             System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
             global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Draw match with no black imports with correct result", null, tagsOfScenario, argumentsOfScenario, featureTags);
-#line 32
+#line 43
   this.ScenarioInitialize(scenarioInfo);
 #line hidden
             if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
@@ -278,13 +348,13 @@ namespace MaichessAnalysisService.Tests.Features
             else
             {
                 await this.ScenarioStartAsync();
-#line 33
+#line 44
     await testRunner.GivenAsync("match \"match-6\" exists with status \"draw\" and white user \"user-1\" and no black", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
 #line hidden
-#line 34
+#line 45
     await testRunner.WhenAsync("\"user-1\" imports match \"match-6\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
-#line 35
+#line 46
     await testRunner.ThenAsync("the result game result is \"1/2-1/2\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
             }
@@ -299,7 +369,7 @@ namespace MaichessAnalysisService.Tests.Features
             string[] tagsOfScenario = ((string[])(null));
             System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
             global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Match with bot black player imports successfully", null, tagsOfScenario, argumentsOfScenario, featureTags);
-#line 37
+#line 48
   this.ScenarioInitialize(scenarioInfo);
 #line hidden
             if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
@@ -309,14 +379,14 @@ namespace MaichessAnalysisService.Tests.Features
             else
             {
                 await this.ScenarioStartAsync();
-#line 38
+#line 49
     await testRunner.GivenAsync(("match \"match-7\" exists with status \"white_won\" and white user \"user-1\" and black " +
                         "bot \"bot-1\""), ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
 #line hidden
-#line 39
+#line 50
     await testRunner.WhenAsync("\"user-1\" imports match \"match-7\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
-#line 40
+#line 51
     await testRunner.ThenAsync("the result game source is \"match\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
             }
@@ -331,7 +401,7 @@ namespace MaichessAnalysisService.Tests.Features
             string[] tagsOfScenario = ((string[])(null));
             System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
             global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Unspecified status imports with asterisk result", null, tagsOfScenario, argumentsOfScenario, featureTags);
-#line 42
+#line 53
   this.ScenarioInitialize(scenarioInfo);
 #line hidden
             if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
@@ -341,14 +411,14 @@ namespace MaichessAnalysisService.Tests.Features
             else
             {
                 await this.ScenarioStartAsync();
-#line 43
+#line 54
     await testRunner.GivenAsync(("match \"match-8\" exists with status \"unspecified\" and no white and black user \"use" +
                         "r-1\""), ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
 #line hidden
-#line 44
+#line 55
     await testRunner.WhenAsync("\"user-1\" imports match \"match-8\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
-#line 45
+#line 56
     await testRunner.ThenAsync("the result game result is \"*\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
             }
