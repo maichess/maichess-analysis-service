@@ -25,6 +25,7 @@
       "!**/Data/AnalysisMetaRepository.cs",
       "!**/Domain/AnalysisSession.cs",
       "!**/Domain/*Exception.cs",
+      "!**/Kafka/**/*.cs",
       "!**/Services/AnalysisSessionService.cs",
       "!**/Services/AnalysisConfig.cs"
     ],

@@ -120,7 +120,7 @@ namespace MaichessAnalysisService.Tests.Features
                         "PP1PPP/RNBQKBNR w KQkq e6 0 2\""), ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
 #line 7
-    await testRunner.WhenAsync("\"user-1\" imports the following PGN:", "[White \"Alice\"]\r\n[Black \"Bob\"]\r\n[Result \"*\"]\r\n\r\n1. e4 e5 *", ((global::Reqnroll.Table)(null)), "When ");
+    await testRunner.WhenAsync("\"user-1\" imports the following PGN:", "[White \"Alice\"]\n[Black \"Bob\"]\n[Result \"*\"]\n\n1. e4 e5 *", ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
 #line 15
     await testRunner.ThenAsync("the result game source is \"pgn\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
@@ -157,7 +157,7 @@ namespace MaichessAnalysisService.Tests.Features
             {
                 await this.ScenarioStartAsync();
 #line 21
-    await testRunner.WhenAsync("\"user-1\" imports the following PGN:", "[White \"Alice\"]\r\n[Black \"Bob\"]\r\n[Result \"*\"]\r\n\r\n*", ((global::Reqnroll.Table)(null)), "When ");
+    await testRunner.WhenAsync("\"user-1\" imports the following PGN:", "[White \"Alice\"]\n[Black \"Bob\"]\n[Result \"*\"]\n\n*", ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
 #line 29
     await testRunner.ThenAsync("the result game source is \"pgn\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
@@ -188,7 +188,7 @@ namespace MaichessAnalysisService.Tests.Features
             {
                 await this.ScenarioStartAsync();
 #line 33
-    await testRunner.WhenAsync("\"user-1\" imports the following PGN:", "[Event \"Test\"]\r\n[Result \"*\"]\r\n\r\n*", ((global::Reqnroll.Table)(null)), "When ");
+    await testRunner.WhenAsync("\"user-1\" imports the following PGN:", "[Event \"Test\"]\n[Result \"*\"]\n\n*", ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
 #line 40
     await testRunner.ThenAsync("the result game white name is \"?\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
@@ -250,7 +250,7 @@ namespace MaichessAnalysisService.Tests.Features
     await testRunner.GivenAsync("the move validator rejects SAN \"Zz99\" at the initial FEN", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
 #line hidden
 #line 49
-    await testRunner.WhenAsync("\"user-1\" imports the following PGN:", "[Event \"Test\"]\r\n[Result \"*\"]\r\n\r\n1. Zz99 *", ((global::Reqnroll.Table)(null)), "When ");
+    await testRunner.WhenAsync("\"user-1\" imports the following PGN:", "[Event \"Test\"]\n[Result \"*\"]\n\n1. Zz99 *", ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
 #line 56
     await testRunner.ThenAsync("an InvalidPgnException is thrown with reason containing \"Zz99\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
@@ -283,8 +283,7 @@ namespace MaichessAnalysisService.Tests.Features
                         " KQkq e3 0 1\""), ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
 #line hidden
 #line 60
-    await testRunner.WhenAsync("\"user-1\" imports the following PGN:", ("[FEN \"r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1\"]\r\n[SetUp \"1\"]\r\n\r\n1. e4 " +
-                        "*"), ((global::Reqnroll.Table)(null)), "When ");
+    await testRunner.WhenAsync("\"user-1\" imports the following PGN:", "[FEN \"r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1\"]\n[SetUp \"1\"]\n\n1. e4 *", ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
 #line 67
     await testRunner.ThenAsync(("the result game starting fen is \"r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0" +

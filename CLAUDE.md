@@ -147,3 +147,6 @@ when investigating whether tests genuinely exercise behaviour.
 | `Jwt:Key` | JWT signing key (same value as other services) |
 | `Analysis:DefaultBotId` | Bot ID whose analysis results are cached. Mismatch triggers cache scrape on startup. |
 | `Analysis:DefaultLineCount` | Line count used for caching (analysis results are only written when `line_count` matches this value) |
+| `KAFKA_ENABLED` | `true` routes analysis session control over Kafka (`analysis.commands.v1` / `analysis.events.v1`) instead of the synchronous `Engine.AnalyzePosition` gRPC stream. Staging only; unset/false in prod. See `CONTRACT_NOTES.md` (Kafka task 07). |
+| `KAFKA_BOOTSTRAP` | Kafka bootstrap servers (default `kafka:9092`). Used only when `KAFKA_ENABLED`. |
+| `SCHEMA_REGISTRY_URL` | Confluent Schema Registry URL (default `http://schema-registry:8081`). Used only when `KAFKA_ENABLED`. |

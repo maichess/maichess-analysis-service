@@ -7,6 +7,7 @@ using Maichess.MoveValidator.V1;
 using Maichess.User.V1;
 using MaichessAnalysisService.Data;
 using MaichessAnalysisService.Domain;
+using MaichessAnalysisService.Kafka;
 using MaichessAnalysisService.Rest;
 using MaichessAnalysisService.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -45,6 +46,17 @@ builder.Services.AddSingleton<AnalysisGameService>();
 builder.Services.AddSingleton<AnalysisSessionService>();
 
 builder.Services.Configure<AnalysisConfig>(builder.Configuration.GetSection("Analysis"));
+
+// Analysis over Kafka (staging only). When enabled, session control is published
+// to analysis.commands.v1 and engine depth updates arrive over analysis.events.v1;
+// otherwise the synchronous Engine.AnalyzePosition gRPC stream is used (prod).
+bool kafkaEnabled = (Environment.GetEnvironmentVariable("KAFKA_ENABLED") ?? string.Empty)
+    .Equals("true", StringComparison.OrdinalIgnoreCase);
+if (kafkaEnabled)
+{
+    builder.Services.AddSingleton<IAnalysisCommandSink, KafkaAnalysisCommandSink>();
+    builder.Services.AddHostedService<AnalysisEventConsumer>();
+}
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

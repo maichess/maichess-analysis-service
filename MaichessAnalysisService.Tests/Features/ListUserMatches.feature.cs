@@ -26,8 +26,8 @@ namespace MaichessAnalysisService.Tests.Features
         
         private static string[] featureTags = ((string[])(null));
         
-        private static global::Reqnroll.FeatureInfo featureInfo = new global::Reqnroll.FeatureInfo(new System.Globalization.CultureInfo("en-US"), "Features", "List User Matches", ("  Users can list their finished matches imported directly from match-db.\r\n  Ongoi" +
-                "ng matches are filtered out and results are paginated."), global::Reqnroll.ProgrammingLanguage.CSharp, featureTags);
+        private static global::Reqnroll.FeatureInfo featureInfo = new global::Reqnroll.FeatureInfo(new System.Globalization.CultureInfo("en-US"), "Features", "List User Matches", ("  Users can list their finished matches imported directly from match-db.\n  Ongoin" +
+                "g matches are filtered out and results are paginated."), global::Reqnroll.ProgrammingLanguage.CSharp, featureTags);
         
         private Xunit.Abstractions.ITestOutputHelper _testOutputHelper;
         
