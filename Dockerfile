@@ -15,6 +15,7 @@ COPY Domain/ Domain/
 COPY Data/ Data/
 COPY Services/ Services/
 COPY Rest/ Rest/
+COPY Kafka/ Kafka/
 COPY Program.cs ./
 RUN dotnet publish maichess-analysis-service.csproj \
     -c Release -o /app/publish --no-restore
