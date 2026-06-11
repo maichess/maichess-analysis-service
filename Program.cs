@@ -15,7 +15,6 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
-using SocketGrpc = Socket.V1.Socket;
 
 DotNetEnv.Env.Load();
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
@@ -26,8 +25,6 @@ string engineUrl = builder.Configuration["Services:EngineService"]
     ?? throw new InvalidOperationException("Services:EngineService is not configured");
 string moveValidatorUrl = builder.Configuration["Services:MoveValidatorService"]
     ?? throw new InvalidOperationException("Services:MoveValidatorService is not configured");
-string socketUrl = builder.Configuration["Services:SocketService"]
-    ?? throw new InvalidOperationException("Services:SocketService is not configured");
 string userServiceUrl = builder.Configuration["Services:UserService"]
     ?? throw new InvalidOperationException("Services:UserService is not configured");
 string jwtKey = builder.Configuration["Jwt:Key"]
@@ -36,7 +33,6 @@ string jwtKey = builder.Configuration["Jwt:Key"]
 builder.Services.AddSingleton(new Database.DatabaseClient(GrpcChannel.ForAddress(dbUrl)));
 builder.Services.AddSingleton(new Bots.BotsClient(GrpcChannel.ForAddress(engineUrl)));
 builder.Services.AddSingleton(new Moves.MovesClient(GrpcChannel.ForAddress(moveValidatorUrl)));
-builder.Services.AddSingleton(new SocketGrpc.SocketClient(GrpcChannel.ForAddress(socketUrl)));
 builder.Services.AddSingleton(new Users.UsersClient(GrpcChannel.ForAddress(userServiceUrl)));
 
 builder.Services.AddSingleton<IAnalysisGameRepository, AnalysisGameRepository>();
@@ -44,6 +40,10 @@ builder.Services.AddSingleton<IAnalysisResultRepository, AnalysisResultRepositor
 builder.Services.AddSingleton<AnalysisMetaRepository>();
 builder.Services.AddSingleton<AnalysisGameService>();
 builder.Services.AddSingleton<AnalysisSessionService>();
+
+// Real-time client push goes over socket.outbound.v1 (Kafka task 09 retired the
+// Socket.EmitEvent gRPC call); the socket service fans the event out to the user.
+builder.Services.AddSingleton<ISocketPushSink, KafkaSocketPushSink>();
 
 builder.Services.Configure<AnalysisConfig>(builder.Configuration.GetSection("Analysis"));
 

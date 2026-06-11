@@ -1,6 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
 using Confluent.Kafka;
-using Confluent.SchemaRegistry;
 using Maichess.Events.V1;
 using MaichessAnalysisService.Domain;
 using MaichessAnalysisService.Services;
@@ -28,7 +27,6 @@ internal sealed class AnalysisEventConsumer : BackgroundService
 
     private readonly AnalysisSessionService sessionService;
     private readonly ILogger<AnalysisEventConsumer> logger;
-    private readonly CachedSchemaRegistryClient registry;
     private readonly IConsumer<string, AnalysisEvent> consumer;
 
     public AnalysisEventConsumer(
@@ -39,10 +37,7 @@ internal sealed class AnalysisEventConsumer : BackgroundService
         this.logger = logger;
 
         string bootstrap = Environment.GetEnvironmentVariable("KAFKA_BOOTSTRAP") ?? "kafka:9092";
-        string registryUrl = Environment.GetEnvironmentVariable("SCHEMA_REGISTRY_URL")
-            ?? "http://schema-registry:8081";
 
-        registry = new CachedSchemaRegistryClient(new SchemaRegistryConfig { Url = registryUrl });
         consumer = new ConsumerBuilder<string, AnalysisEvent>(new ConsumerConfig
         {
             BootstrapServers = bootstrap,
@@ -56,7 +51,6 @@ internal sealed class AnalysisEventConsumer : BackgroundService
     public override void Dispose()
     {
         consumer.Dispose();
-        registry.Dispose();
         base.Dispose();
     }
 

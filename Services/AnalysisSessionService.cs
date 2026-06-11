@@ -1,13 +1,11 @@
 using System.Collections.Concurrent;
 using System.Globalization;
 using System.Text;
-using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using Maichess.Engine.V1;
 using Maichess.MoveValidator.V1;
 using MaichessAnalysisService.Domain;
 using Microsoft.Extensions.Options;
-using SocketGrpc = Socket.V1.Socket;
 
 namespace MaichessAnalysisService.Services;
 
@@ -16,7 +14,7 @@ internal sealed class AnalysisSessionService(
     IAnalysisResultRepository resultRepo,
     Bots.BotsClient botsClient,
     Moves.MovesClient movesClient,
-    SocketGrpc.SocketClient socketClient,
+    ISocketPushSink pushSink,
     IOptions<AnalysisConfig> configOptions,
     IEnumerable<IAnalysisCommandSink> commandSinks)
 {
@@ -440,78 +438,19 @@ internal sealed class AnalysisSessionService(
         StartAnalysis(session);
     }
 
-    private async Task EmitAnalysisUpdateAsync(
+    private Task EmitAnalysisUpdateAsync(
         string userId,
         string sessionId,
         int depth,
         IReadOnlyList<AnalysisLine> lines,
-        CancellationToken ct)
-    {
-        Value[] lineValues = [.. lines.Select(l => Value.ForStruct(new Struct
-        {
-            Fields =
-            {
-                ["rank"] = Value.ForNumber(l.Rank),
-                ["evaluation_cp"] = Value.ForNumber(l.EvaluationCp),
-                ["moves"] = Value.ForList([.. l.Moves.Select(Value.ForString)]),
-            },
-        }))];
+        CancellationToken ct) =>
+        pushSink.PushAnalysisUpdateAsync(userId, sessionId, depth, lines, ct);
 
-        await socketClient.EmitEventAsync(
-            new Socket.V1.EmitEventRequest
-            {
-                UserId = userId,
-                Event = "analysis_update",
-                Payload = new Struct
-                {
-                    Fields =
-                    {
-                        ["session_id"] = Value.ForString(sessionId),
-                        ["depth"] = Value.ForNumber(depth),
-                        ["lines"] = Value.ForList(lineValues),
-                    },
-                },
-            },
-            cancellationToken: ct);
-    }
+    private Task EmitAnalysisCompleteAsync(
+        string userId, string sessionId, int finalDepth, CancellationToken ct) =>
+        pushSink.PushAnalysisCompleteAsync(userId, sessionId, finalDepth, ct);
 
-    private async Task EmitAnalysisCompleteAsync(
-        string userId, string sessionId, int finalDepth, CancellationToken ct)
-    {
-        await socketClient.EmitEventAsync(
-            new Socket.V1.EmitEventRequest
-            {
-                UserId = userId,
-                Event = "analysis_complete",
-                Payload = new Struct
-                {
-                    Fields =
-                    {
-                        ["session_id"] = Value.ForString(sessionId),
-                        ["final_depth"] = Value.ForNumber(finalDepth),
-                    },
-                },
-            },
-            cancellationToken: ct);
-    }
-
-    private async Task EmitAnalysisErrorAsync(
-        string userId, string sessionId, string message, CancellationToken ct)
-    {
-        await socketClient.EmitEventAsync(
-            new Socket.V1.EmitEventRequest
-            {
-                UserId = userId,
-                Event = "analysis_error",
-                Payload = new Struct
-                {
-                    Fields =
-                    {
-                        ["session_id"] = Value.ForString(sessionId),
-                        ["message"] = Value.ForString(message),
-                    },
-                },
-            },
-            cancellationToken: ct);
-    }
+    private Task EmitAnalysisErrorAsync(
+        string userId, string sessionId, string message, CancellationToken ct) =>
+        pushSink.PushAnalysisErrorAsync(userId, sessionId, message, ct);
 }

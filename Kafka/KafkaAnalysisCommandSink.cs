@@ -1,6 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
 using Confluent.Kafka;
-using Confluent.SchemaRegistry;
 using Maichess.Events.V1;
 using MaichessAnalysisService.Services;
 
@@ -19,7 +18,6 @@ internal sealed class KafkaAnalysisCommandSink : IAnalysisCommandSink, IDisposab
     private const string ProducerName = "analysis-service";
 
     private readonly IProducer<string, AnalysisCommand> producer;
-    private readonly CachedSchemaRegistryClient registry;
     private readonly ILogger<KafkaAnalysisCommandSink> logger;
 
     public KafkaAnalysisCommandSink(ILogger<KafkaAnalysisCommandSink> logger)
@@ -27,13 +25,10 @@ internal sealed class KafkaAnalysisCommandSink : IAnalysisCommandSink, IDisposab
         this.logger = logger;
 
         string bootstrap = Environment.GetEnvironmentVariable("KAFKA_BOOTSTRAP") ?? "kafka:9092";
-        string registryUrl = Environment.GetEnvironmentVariable("SCHEMA_REGISTRY_URL")
-            ?? "http://schema-registry:8081";
 
-        registry = new CachedSchemaRegistryClient(new SchemaRegistryConfig { Url = registryUrl });
         producer = new ProducerBuilder<string, AnalysisCommand>(
                 new ProducerConfig { BootstrapServers = bootstrap })
-            .SetValueSerializer(ProtobufEventSerdes.Serializer<AnalysisCommand>(registry))
+            .SetValueSerializer(ProtobufEventSerdes.Serializer<AnalysisCommand>())
             .Build();
     }
 
@@ -61,7 +56,6 @@ internal sealed class KafkaAnalysisCommandSink : IAnalysisCommandSink, IDisposab
     {
         producer.Flush(TimeSpan.FromSeconds(5));
         producer.Dispose();
-        registry.Dispose();
     }
 
     private static AnalysisCommand Envelope(string sessionId, string eventType) => new()

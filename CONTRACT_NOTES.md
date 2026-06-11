@@ -58,3 +58,18 @@ No contract change beyond Kafka `01`; the analysis protos already exist.
 not exercised end-to-end here (needs Kafka + engine + socket-service running). The new I/O glue is
 `[ExcludeFromCodeCoverage]` + Stryker-excluded, consistent with the existing repos/endpoints and the
 (already untested) `AnalysisSessionService` orchestration.
+
+---
+
+## Kafka task 09 — client-push moved off `Socket.EmitEvent` → PUBLISH HANDOFF
+
+`Socket.EmitEvent` was this service's only use of `socket.proto`; it is removed. Analysis results
+(`analysis_update`/`complete`/`error`) now go through the new `Services/ISocketPushSink` seam, whose
+sole impl `Kafka/KafkaSocketPushSink` ([`ExcludeFromCodeCoverage`]) produces an `OutboundEvent`
+(`SocketPush.target_user_id`, JSON `payload_json` — field names unchanged from the old gRPC `Struct`)
+to `socket.outbound.v1`. `Program.cs` no longer registers `SocketGrpc.SocketClient` or reads
+`Services:SocketService`. Build green, 47 tests pass.
+
+**Blocked on the shared contract publish** (the `Socket` service is removed from `socket.proto`).
+**Post-publish:** bump `Maichess.PlatformProtos` in the `.csproj` and rebuild/test. No code change
+expected — nothing here imports the stubbed socket types any more.

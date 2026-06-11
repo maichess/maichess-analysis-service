@@ -1,27 +1,37 @@
 using System.Diagnostics.CodeAnalysis;
 using Confluent.Kafka;
-using Confluent.Kafka.SyncOverAsync;
-using Confluent.SchemaRegistry;
-using Confluent.SchemaRegistry.Serdes;
 using Google.Protobuf;
 
 namespace MaichessAnalysisService.Kafka;
 
-// Confluent Protobuf serde factory for the maichess.events.v1 analysis messages
+// Raw-Protobuf Kafka serdes for the maichess.events.v1 analysis messages
 // (AnalysisCommand produced to analysis.commands.v1, AnalysisEvent consumed from
-// analysis.events.v1). These events are Protobuf-native from the start (Kafka
-// task 07), so there is no Avro path here — unlike the live topics that are still
-// mid-migration. Mirrors the match-manager helper; the only Kafka-specific
-// dependency is Confluent.SchemaRegistry.Serdes.Protobuf, the generated types
-// ship in Maichess.PlatformProtos alongside the gRPC stubs.
+// analysis.events.v1). Kafka task 09 removed the Confluent Schema Registry: the wire
+// format is the bare Protobuf bytes (msg.ToByteArray() / Parser.ParseFrom(bytes)),
+// with the schemas owned solely by maichess-api-contracts.
 [ExcludeFromCodeCoverage]
 internal static class ProtobufEventSerdes
 {
-    public static IAsyncSerializer<T> Serializer<T>(ISchemaRegistryClient registry)
-        where T : class, IMessage<T>, new()
-        => new ProtobufSerializer<T>(registry);
+    public static ISerializer<T> Serializer<T>()
+        where T : IMessage<T>
+        => new RawSerializer<T>();
 
     public static IDeserializer<T> Deserializer<T>()
-        where T : class, IMessage<T>, new()
-        => new ProtobufDeserializer<T>().AsSyncOverAsync();
+        where T : IMessage<T>, new()
+        => new RawDeserializer<T>();
+
+    private sealed class RawSerializer<T> : ISerializer<T>
+        where T : IMessage<T>
+    {
+        public byte[] Serialize(T data, SerializationContext context) => data.ToByteArray();
+    }
+
+    private sealed class RawDeserializer<T> : IDeserializer<T>
+        where T : IMessage<T>, new()
+    {
+        private static readonly MessageParser<T> Parser = new(() => new T());
+
+        public T Deserialize(ReadOnlySpan<byte> data, bool isNull, SerializationContext context) =>
+            isNull ? new T() : Parser.ParseFrom(data);
+    }
 }

@@ -10,8 +10,10 @@ clients via the Socket Service.
   - `protos/database-service/v1/database.proto` — `Get`, `List`, `Insert`, `DeleteWhere` on `analysis_games`, `analysis_results`, `analysis_meta`; `Get` on `matches` (read-only)
   - `protos/engine-service/v1/bots.proto` — `AnalyzePosition`, `ListBots`
   - `protos/move-validator-service/v1/moves.proto` — `ValidateMoveSan`, `ConvertSequenceToSan`, `ValidateMove`
-  - `protos/socket-service/v1/socket.proto` — `EmitEvent`
   - `protos/user-service/v1/users.proto` — `GetUser` (username resolution for match imports)
+- **Real-time push (no gRPC):** analysis results are published to the `socket.outbound.v1` Kafka
+  topic via the `ISocketPushSink` seam (`Kafka/KafkaSocketPushSink`); the socket service fans them
+  out. The former `Socket.EmitEvent` gRPC call was removed in Kafka task 09.
 - **Generated stubs:** `Maichess.PlatformProtos` NuGet (see `maichess-api-contracts/dotnet/`)
 
 The `analysis.proto` gRPC server endpoint has been removed. This service exposes REST only.
@@ -73,8 +75,8 @@ MaichessAnalysisService/
 
 1. Query `analysis_results` for cached depths: `filter = { fen: currentFen, bot_id }`, post-filter
    `line_count >= session.line_count`, sort by `depth`, limit 100.
-2. Emit all cached depths immediately via `Socket.EmitEvent` (event `"analysis_update"`), trimming
-   lines to `session.line_count`.
+2. Emit all cached depths immediately via the `ISocketPushSink` (event `"analysis_update"` on
+   `socket.outbound.v1`), trimming lines to `session.line_count`.
 3. Open `Engine.AnalyzePosition` stream.
 4. For each engine update: if `depth <= max_cached_depth`, discard; else emit via socket AND
    (if `bot_id == DefaultAnalysisBotId && line_count == DefaultLineCount`) insert into
@@ -142,11 +144,13 @@ when investigating whether tests genuinely exercise behaviour.
 | `Services:DatabaseService` | match-db Database Service gRPC address |
 | `Services:EngineService` | Engine Service gRPC address |
 | `Services:MoveValidatorService` | Move Validator gRPC address |
-| `Services:SocketService` | Socket Service gRPC address |
 | `Services:UserService` | User Service gRPC address (username resolution) |
 | `Jwt:Key` | JWT signing key (same value as other services) |
 | `Analysis:DefaultBotId` | Bot ID whose analysis results are cached. Mismatch triggers cache scrape on startup. |
 | `Analysis:DefaultLineCount` | Line count used for caching (analysis results are only written when `line_count` matches this value) |
 | `KAFKA_ENABLED` | `true` routes analysis session control over Kafka (`analysis.commands.v1` / `analysis.events.v1`) instead of the synchronous `Engine.AnalyzePosition` gRPC stream. Staging only; unset/false in prod. See `CONTRACT_NOTES.md` (Kafka task 07). |
-| `KAFKA_BOOTSTRAP` | Kafka bootstrap servers (default `kafka:9092`). Used only when `KAFKA_ENABLED`. |
-| `SCHEMA_REGISTRY_URL` | Confluent Schema Registry URL (default `http://schema-registry:8081`). Used only when `KAFKA_ENABLED`. |
+| `KAFKA_BOOTSTRAP` | Kafka bootstrap servers (default `kafka:9092`). Used for the `socket.outbound.v1` push producer (always) and, when `KAFKA_ENABLED`, the analysis command/event streams. |
+
+> Kafka task 09 removed the Confluent Schema Registry: events are raw Protobuf bytes, so there is
+> no longer a `SCHEMA_REGISTRY_URL`. Real-time push always uses the `socket.outbound.v1` producer
+> (hence no `Services:SocketService`).
