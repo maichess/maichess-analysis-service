@@ -25,3 +25,51 @@ fields or cross-service calls were needed.
 Cache reads use `Database.List(limit=100)`. With practical engine depth ceilings around 40, this
 is safe. If the engine ever exceeds 100 depths for a position, cache reads will silently miss the
 deepest entries. Raise the limit if this becomes an issue.
+
+## Analysis over Kafka — implemented (Kafka task `07`)
+
+Analysis session control can run over Kafka instead of the synchronous
+`Engine.AnalyzePosition` gRPC stream. **Opt-in via `KAFKA_ENABLED=true`** (staging only; prod keeps
+`kafka.enabled: false`, so the gRPC streaming path stays the default and nothing changes there).
+No contract change beyond Kafka `01`; the analysis protos already exist.
+
+- **`Maichess.PlatformProtos` bumped `0.4.0 → 0.6.0`** — the version that carries
+  `maichess.events.v1` (the analysis `*_commands` / `*_events` protos from task `01`). Restores +
+  builds clean; no source changes were required by the bump itself.
+- **Producer (`Kafka/KafkaAnalysisCommandSink.cs`, `[ExcludeFromCodeCoverage]`):** publishes
+  `StartAnalysis{sessionId, fen, botId, lineCount}` / `StopAnalysis{sessionId}` to
+  `analysis.commands.v1` (keyed by sessionId) via the Confluent Protobuf serde
+  (`Kafka/ProtobufEventSerdes.cs`). Behind the `Services/IAnalysisCommandSink` seam.
+- **Consumer (`Kafka/AnalysisEventConsumer.cs`, `[ExcludeFromCodeCoverage]`):** consumes
+  `analysis.events.v1` and forwards depth updates to the client over the existing `Socket.EmitEvent`
+  channel (`analysis_update` / `analysis_complete` / `analysis_error`). It runs in-process with the
+  producer and resolves the live in-memory session by id (`AnalysisSessionService.FindById`) to
+  recover the user and apply the stale-position filter. **Unique consumer group per process** so a
+  multi-replica deploy fans every event to every replica and each delivers only the sessions it
+  holds (the session is pinned in-memory to the replica that started it).
+- **`AnalysisSessionService`:** when a sink is injected it routes start/stop through Kafka. Cached
+  depths are still emitted on the command side (`EmitCachedDepthsAsync`) before the `StartAnalysis`
+  is published; live depths arrive over `analysis.events.v1`. The session tracks `AnalyzedFen`
+  (drops events from a superseded position — navigate/whatif) and `MaxCachedDepth` (drops a live
+  depth already served from cache). Cancellation is by `StopAnalysis`; the engine cancels silently,
+  so no terminal event is emitted on cancel (matching the gRPC behaviour).
+
+**Verification limit:** built green and the existing game-service tests pass, but the Kafka path was
+not exercised end-to-end here (needs Kafka + engine + socket-service running). The new I/O glue is
+`[ExcludeFromCodeCoverage]` + Stryker-excluded, consistent with the existing repos/endpoints and the
+(already untested) `AnalysisSessionService` orchestration.
+
+---
+
+## Kafka task 09 — client-push moved off `Socket.EmitEvent` → PUBLISH HANDOFF
+
+`Socket.EmitEvent` was this service's only use of `socket.proto`; it is removed. Analysis results
+(`analysis_update`/`complete`/`error`) now go through the new `Services/ISocketPushSink` seam, whose
+sole impl `Kafka/KafkaSocketPushSink` ([`ExcludeFromCodeCoverage`]) produces an `OutboundEvent`
+(`SocketPush.target_user_id`, JSON `payload_json` — field names unchanged from the old gRPC `Struct`)
+to `socket.outbound.v1`. `Program.cs` no longer registers `SocketGrpc.SocketClient` or reads
+`Services:SocketService`. Build green, 47 tests pass.
+
+**Blocked on the shared contract publish** (the `Socket` service is removed from `socket.proto`).
+**Post-publish:** bump `Maichess.PlatformProtos` in the `.csproj` and rebuild/test. No code change
+expected — nothing here imports the stubbed socket types any more.

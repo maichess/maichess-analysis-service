@@ -1,13 +1,11 @@
 using System.Collections.Concurrent;
 using System.Globalization;
 using System.Text;
-using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using Maichess.Engine.V1;
 using Maichess.MoveValidator.V1;
 using MaichessAnalysisService.Domain;
 using Microsoft.Extensions.Options;
-using SocketGrpc = Socket.V1.Socket;
 
 namespace MaichessAnalysisService.Services;
 
@@ -16,12 +14,19 @@ internal sealed class AnalysisSessionService(
     IAnalysisResultRepository resultRepo,
     Bots.BotsClient botsClient,
     Moves.MovesClient movesClient,
-    SocketGrpc.SocketClient socketClient,
-    IOptions<AnalysisConfig> configOptions)
+    ISocketPushSink pushSink,
+    IOptions<AnalysisConfig> configOptions,
+    IEnumerable<IAnalysisCommandSink> commandSinks)
 {
     private readonly AnalysisConfig config = configOptions.Value;
     private readonly ConcurrentDictionary<string, AnalysisSession> sessions =
         new(StringComparer.Ordinal);
+
+    // Present only when KAFKA_ENABLED (registered in Program.cs); null selects the
+    // synchronous gRPC streaming path. When present, analysis control is published
+    // to analysis.commands.v1 and depth updates arrive over analysis.events.v1
+    // (AnalysisEventConsumer), which calls back into the On*Async handlers below.
+    private readonly IAnalysisCommandSink? sink = commandSinks.FirstOrDefault();
 
     internal async Task<AnalysisSession> CreateSessionAsync(
         string userId, string gameId, string botId, int lineCount, CancellationToken ct)
@@ -178,24 +183,8 @@ internal sealed class AnalysisSessionService(
 
         try
         {
-            IReadOnlyList<AnalysisResultRecord> cached =
-                await resultRepo.GetCachedDepthsAsync(currentFen, botId, ct);
-
-            IReadOnlyList<AnalysisResultRecord> filtered = [.. cached
-                .Where(r => r.LineCount >= lineCount)
-                .OrderBy(r => r.Depth)];
-
-            int maxCachedDepth = filtered.Count > 0 ? filtered.Max(r => r.Depth) : 0;
-
-            foreach (AnalysisResultRecord record in filtered)
-            {
-                await EmitAnalysisUpdateAsync(
-                    userId,
-                    sessionId,
-                    (uint)record.Depth,
-                    [.. record.Lines.Take(lineCount)],
-                    ct);
-            }
+            int maxCachedDepth =
+                await EmitCachedDepthsAsync(userId, sessionId, currentFen, botId, lineCount, ct);
 
             using global::Grpc.Core.AsyncServerStreamingCall<AnalysisUpdate> engineCall =
                 botsClient.AnalyzePosition(
@@ -207,35 +196,22 @@ internal sealed class AnalysisSessionService(
                     },
                     cancellationToken: ct);
 
-            uint finalDepth = 0;
+            int finalDepth = 0;
             await foreach (AnalysisUpdate update in
                 engineCall.ResponseStream.ReadAllAsync(ct))
             {
-                if (update.Depth <= maxCachedDepth)
+                int depth = (int)update.Depth;
+                if (depth <= maxCachedDepth)
                 {
                     continue;
                 }
 
-                finalDepth = update.Depth;
+                finalDepth = depth;
 
                 IReadOnlyList<AnalysisLine> lines = [.. update.Lines.Select(pv =>
                     new AnalysisLine((int)pv.Rank, pv.EvaluationCp, [.. pv.Moves]))];
 
-                if (botId == config.DefaultBotId && lineCount == config.DefaultLineCount)
-                {
-                    await resultRepo.InsertDepthAsync(
-                        new AnalysisResultRecord(
-                            Id: string.Empty,
-                            Fen: currentFen,
-                            BotId: botId,
-                            LineCount: lineCount,
-                            Depth: (int)update.Depth,
-                            Lines: lines,
-                            CreatedAt: DateTimeOffset.UtcNow),
-                        ct);
-                }
-
-                await EmitAnalysisUpdateAsync(userId, sessionId, update.Depth, lines, ct);
+                await DeliverDepthAsync(userId, sessionId, currentFen, botId, lineCount, depth, lines, ct);
             }
 
             await EmitAnalysisCompleteAsync(userId, sessionId, finalDepth, ct);
@@ -251,11 +227,45 @@ internal sealed class AnalysisSessionService(
         }
     }
 
-    private static void CancelAnalysis(AnalysisSession session)
+    // Called by AnalysisEventConsumer for each analysis.events.v1 depth update.
+    // Drops updates for a superseded position or one already served from cache.
+    internal async Task OnDepthAsync(
+        string sessionId,
+        string fen,
+        string botId,
+        int depth,
+        IReadOnlyList<AnalysisLine> lines,
+        CancellationToken ct)
     {
-        session.ActiveCts?.Cancel();
-        session.ActiveCts?.Dispose();
-        session.ActiveCts = null;
+        AnalysisSession? session = FindById(sessionId);
+        if (session is null || session.AnalyzedFen != fen || depth <= session.MaxCachedDepth)
+        {
+            return;
+        }
+
+        await DeliverDepthAsync(session.UserId, sessionId, fen, botId, session.LineCount, depth, lines, ct);
+    }
+
+    internal async Task OnCompleteAsync(string sessionId, int finalDepth, CancellationToken ct)
+    {
+        AnalysisSession? session = FindById(sessionId);
+        if (session is null || session.AnalyzedFen is null)
+        {
+            return;
+        }
+
+        await EmitAnalysisCompleteAsync(session.UserId, sessionId, finalDepth, ct);
+    }
+
+    internal async Task OnFailedAsync(string sessionId, string message, CancellationToken ct)
+    {
+        AnalysisSession? session = FindById(sessionId);
+        if (session is null)
+        {
+            return;
+        }
+
+        await EmitAnalysisErrorAsync(session.UserId, sessionId, message, ct);
     }
 
     private static string BuildWhatifPgn(string baseFen, IEnumerable<string> sanMoves)
@@ -302,6 +312,107 @@ internal sealed class AnalysisSessionService(
         return sb.ToString().TrimEnd();
     }
 
+    // Kafka path: cached depths are emitted here (command side) and the live engine
+    // stream is replaced by StartAnalysis on analysis.commands.v1; AnalysisEventConsumer
+    // delivers the live depths over analysis.events.v1 via OnDepthAsync.
+    private async Task StartViaKafkaAsync(AnalysisSession session)
+    {
+        string currentFen = session.GetCurrentFen();
+        string botId = session.BotId;
+        int lineCount = session.LineCount;
+
+        try
+        {
+            int maxCachedDepth = await EmitCachedDepthsAsync(
+                session.UserId, session.Id, currentFen, botId, lineCount, CancellationToken.None);
+            session.MaxCachedDepth = maxCachedDepth;
+            session.AnalyzedFen = currentFen;
+            await sink!.StartAsync(session.Id, currentFen, botId, lineCount);
+        }
+#pragma warning disable CA1031
+        catch (Exception ex)
+#pragma warning restore CA1031
+        {
+            await EmitAnalysisErrorAsync(session.UserId, session.Id, ex.Message, CancellationToken.None);
+        }
+    }
+
+    private async Task<int> EmitCachedDepthsAsync(
+        string userId, string sessionId, string fen, string botId, int lineCount, CancellationToken ct)
+    {
+        IReadOnlyList<AnalysisResultRecord> cached =
+            await resultRepo.GetCachedDepthsAsync(fen, botId, ct);
+
+        IReadOnlyList<AnalysisResultRecord> filtered = [.. cached
+            .Where(r => r.LineCount >= lineCount)
+            .OrderBy(r => r.Depth)];
+
+        int maxCachedDepth = filtered.Count > 0 ? filtered.Max(r => r.Depth) : 0;
+
+        foreach (AnalysisResultRecord record in filtered)
+        {
+            await EmitAnalysisUpdateAsync(
+                userId, sessionId, record.Depth, [.. record.Lines.Take(lineCount)], ct);
+        }
+
+        return maxCachedDepth;
+    }
+
+    private async Task DeliverDepthAsync(
+        string userId,
+        string sessionId,
+        string fen,
+        string botId,
+        int lineCount,
+        int depth,
+        IReadOnlyList<AnalysisLine> lines,
+        CancellationToken ct)
+    {
+        if (botId == config.DefaultBotId && lineCount == config.DefaultLineCount)
+        {
+            await resultRepo.InsertDepthAsync(
+                new AnalysisResultRecord(
+                    Id: string.Empty,
+                    Fen: fen,
+                    BotId: botId,
+                    LineCount: lineCount,
+                    Depth: depth,
+                    Lines: lines,
+                    CreatedAt: DateTimeOffset.UtcNow),
+                ct);
+        }
+
+        await EmitAnalysisUpdateAsync(userId, sessionId, depth, lines, ct);
+    }
+
+    private AnalysisSession? FindById(string sessionId)
+    {
+        foreach (AnalysisSession session in sessions.Values)
+        {
+            if (string.Equals(session.Id, sessionId, StringComparison.Ordinal))
+            {
+                return session;
+            }
+        }
+
+        return null;
+    }
+
+    private void CancelAnalysis(AnalysisSession session)
+    {
+        if (sink is null)
+        {
+            session.ActiveCts?.Cancel();
+            session.ActiveCts?.Dispose();
+            session.ActiveCts = null;
+        }
+        else if (session.AnalyzedFen is not null)
+        {
+            session.AnalyzedFen = null;
+            _ = Task.Run(() => sink.StopAsync(session.Id));
+        }
+    }
+
     private AnalysisSession GetSession(string sessionId, string userId) =>
         sessions.TryGetValue(userId, out AnalysisSession? session) && session.Id == sessionId
             ? session
@@ -309,9 +420,16 @@ internal sealed class AnalysisSessionService(
 
     private void StartAnalysis(AnalysisSession session)
     {
-        CancellationTokenSource cts = new();
-        session.ActiveCts = cts;
-        _ = Task.Run(() => RunAnalysisStreamAsync(session, cts.Token));
+        if (sink is null)
+        {
+            CancellationTokenSource cts = new();
+            session.ActiveCts = cts;
+            _ = Task.Run(() => RunAnalysisStreamAsync(session, cts.Token));
+        }
+        else
+        {
+            _ = Task.Run(() => StartViaKafkaAsync(session));
+        }
     }
 
     private void RestartAnalysis(AnalysisSession session)
@@ -320,78 +438,19 @@ internal sealed class AnalysisSessionService(
         StartAnalysis(session);
     }
 
-    private async Task EmitAnalysisUpdateAsync(
+    private Task EmitAnalysisUpdateAsync(
         string userId,
         string sessionId,
-        uint depth,
+        int depth,
         IReadOnlyList<AnalysisLine> lines,
-        CancellationToken ct)
-    {
-        Value[] lineValues = [.. lines.Select(l => Value.ForStruct(new Struct
-        {
-            Fields =
-            {
-                ["rank"] = Value.ForNumber(l.Rank),
-                ["evaluation_cp"] = Value.ForNumber(l.EvaluationCp),
-                ["moves"] = Value.ForList([.. l.Moves.Select(Value.ForString)]),
-            },
-        }))];
+        CancellationToken ct) =>
+        pushSink.PushAnalysisUpdateAsync(userId, sessionId, depth, lines, ct);
 
-        await socketClient.EmitEventAsync(
-            new Socket.V1.EmitEventRequest
-            {
-                UserId = userId,
-                Event = "analysis_update",
-                Payload = new Struct
-                {
-                    Fields =
-                    {
-                        ["session_id"] = Value.ForString(sessionId),
-                        ["depth"] = Value.ForNumber(depth),
-                        ["lines"] = Value.ForList(lineValues),
-                    },
-                },
-            },
-            cancellationToken: ct);
-    }
+    private Task EmitAnalysisCompleteAsync(
+        string userId, string sessionId, int finalDepth, CancellationToken ct) =>
+        pushSink.PushAnalysisCompleteAsync(userId, sessionId, finalDepth, ct);
 
-    private async Task EmitAnalysisCompleteAsync(
-        string userId, string sessionId, uint finalDepth, CancellationToken ct)
-    {
-        await socketClient.EmitEventAsync(
-            new Socket.V1.EmitEventRequest
-            {
-                UserId = userId,
-                Event = "analysis_complete",
-                Payload = new Struct
-                {
-                    Fields =
-                    {
-                        ["session_id"] = Value.ForString(sessionId),
-                        ["final_depth"] = Value.ForNumber(finalDepth),
-                    },
-                },
-            },
-            cancellationToken: ct);
-    }
-
-    private async Task EmitAnalysisErrorAsync(
-        string userId, string sessionId, string message, CancellationToken ct)
-    {
-        await socketClient.EmitEventAsync(
-            new Socket.V1.EmitEventRequest
-            {
-                UserId = userId,
-                Event = "analysis_error",
-                Payload = new Struct
-                {
-                    Fields =
-                    {
-                        ["session_id"] = Value.ForString(sessionId),
-                        ["message"] = Value.ForString(message),
-                    },
-                },
-            },
-            cancellationToken: ct);
-    }
+    private Task EmitAnalysisErrorAsync(
+        string userId, string sessionId, string message, CancellationToken ct) =>
+        pushSink.PushAnalysisErrorAsync(userId, sessionId, message, ct);
 }

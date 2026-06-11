@@ -36,6 +36,15 @@ internal sealed class AnalysisSession
 
     internal CancellationTokenSource? ActiveCts { get; set; }
 
+    // Kafka transport only: the position the in-flight analysis was started for
+    // (null when no analysis is running). AnalysisEventConsumer drops events whose
+    // fen no longer matches, so a depth update from a superseded run (navigate /
+    // whatif) is ignored. MaxCachedDepth is the deepest cached depth already
+    // emitted at start time, so live depths at or below it are not re-sent.
+    internal string? AnalyzedFen { get; set; }
+
+    internal int MaxCachedDepth { get; set; }
+
     internal AnalysisGame Game { get; }
 
     internal string GetCurrentFen() =>
