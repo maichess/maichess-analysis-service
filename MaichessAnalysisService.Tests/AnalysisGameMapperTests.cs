@@ -67,4 +67,30 @@ public sealed class AnalysisGameMapperTests
 
         Assert.Equal("match-77", detail.MatchId);
     }
+
+    [Fact]
+    public void ToUserMatchSummary_MapsFieldsAndNestedTimeFormat()
+    {
+        UserMatchSummary match = new(
+            MatchId: "match-5",
+            White: new Dictionary<string, string> { ["username"] = "alice" },
+            Black: new Dictionary<string, string> { ["bot_id"] = "stockfish-3" },
+            Status: "white_won",
+            TimeFormat: new UserMatchTimeFormat("5+0", 300000, 0, "blitz"),
+            MoveCount: 42,
+            FinishedAtMs: 1_700_000_000_000);
+
+        UserMatchSummaryResponse response = AnalysisGameMapper.ToUserMatchSummary(match);
+
+        Assert.Equal("match-5", response.MatchId);
+        Assert.Equal(match.White, response.White);
+        Assert.Equal(match.Black, response.Black);
+        Assert.Equal("white_won", response.Status);
+        Assert.Equal(42, response.MoveCount);
+        Assert.Equal(1_700_000_000_000, response.FinishedAtMs);
+        Assert.Equal("5+0", response.TimeFormat.Id);
+        Assert.Equal(300000, response.TimeFormat.BaseMs);
+        Assert.Equal(0, response.TimeFormat.IncrementMs);
+        Assert.Equal("blitz", response.TimeFormat.Category);
+    }
 }

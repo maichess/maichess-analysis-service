@@ -86,12 +86,25 @@ MaichessAnalysisService/
 
 All socket payloads include `session_id` so clients can correlate events.
 
+### analysis_results Redis L1 (caching task 12)
+
+A Redis L1 fronts the durable Mongo `analysis_results` cache (L2) for the default bot's hot
+positions. The seam is `IAnalysisResultCache` (`Domain/`, Redis impl
+`Data/RedisAnalysisResultCache.cs`) — a hash per position at `analysis:{botId}:{fen}` keyed by
+depth, **no expiry** (allkeys-lru), rebuildable from Mongo. The L1↔L2 logic lives in a
+**decorator** `Data/CachingAnalysisResultRepository` that implements `IAnalysisResultRepository`,
+so `AnalysisResultRepository` (L2) and `AnalysisSessionService` are unchanged; DI wraps the inner
+repo. Only the configured `DefaultBotId` is cached (other bots go straight to Mongo). A
+session-start lookup checks L1 → L2 and promotes an L2 hit into L1; a new default-bot depth write
+persists to Mongo and appends to L1. Rebuildable from Mongo — a cold L1 just falls through.
+See `maichess-knowledge-base/knowledge/architecture/caching-and-read-models.md` (Stage 4, Part A).
+
 ### Startup bot-mismatch check
 
 On application startup (before serving requests):
 1. Read `DefaultAnalysisBotId` from config.
 2. Query `analysis_meta` for document `id = "config"`. If absent, insert `{ id: "config", stored_bot_id: DefaultAnalysisBotId }` and exit.
-3. If `stored_bot_id != DefaultAnalysisBotId`: call `Database.DeleteWhere(collection="analysis_results", filter={})` to scrape all cached data, then update `analysis_meta` with the new `stored_bot_id`.
+3. If `stored_bot_id != DefaultAnalysisBotId`: call `Database.DeleteWhere(collection="analysis_results", filter={})` to scrape all cached data **and clear the Redis L1** (`IAnalysisResultCache.ClearAllAsync`, SCAN `analysis:*`), then update `analysis_meta` with the new `stored_bot_id`.
 
 ### Whatif PGN export
 
@@ -123,6 +136,8 @@ For `GET /sessions/{id}/whatif/pgn`:
 - Excluded from coverage (`[ExcludeFromCodeCoverage]`):
   - `AnalysisEndpoints` (REST adapter)
   - `AnalysisGameRepository`, `AnalysisResultRepository` (require live gRPC/DB)
+  - `RedisAnalysisResultCache` (requires live Redis; the `CachingAnalysisResultRepository`
+    decorator that orchestrates it is unit-tested against a mocked `IAnalysisResultCache`)
   - Compiler-generated logging partials (`[LoggerMessage]` methods)
   - All REST DTO record types
 - Coverlet: exclude `Program.cs`, `*.g.cs`, `*.generated.cs`.
@@ -141,6 +156,7 @@ when investigating whether tests genuinely exercise behaviour.
 
 | Config key | Description |
 |---|---|
+| `ConnectionStrings:Redis` | Shared Redis (`ConnectionStrings__Redis`) backing the `analysis_results` L1. |
 | `Services:DatabaseService` | match-db Database Service gRPC address |
 | `Services:EngineService` | Engine Service gRPC address |
 | `Services:MoveValidatorService` | Move Validator gRPC address |

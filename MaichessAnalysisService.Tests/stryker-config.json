@@ -23,6 +23,7 @@
       "!**/Data/AnalysisGameRepository.cs",
       "!**/Data/AnalysisResultRepository.cs",
       "!**/Data/AnalysisMetaRepository.cs",
+      "!**/Data/RedisAnalysisResultCache.cs",
       "!**/Domain/AnalysisSession.cs",
       "!**/Domain/*Exception.cs",
       "!**/Kafka/**/*.cs",

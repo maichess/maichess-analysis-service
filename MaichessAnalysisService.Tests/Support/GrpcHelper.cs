@@ -11,4 +11,12 @@ internal static class GrpcHelper
             () => Status.DefaultSuccess,
             () => Metadata.Empty,
             () => { });
+
+    internal static AsyncServerStreamingCall<T> ServerStream<T>(IEnumerable<T> items) =>
+        new(
+            new TestAsyncStreamReader<T>(items),
+            Task.FromResult(Metadata.Empty),
+            () => Status.DefaultSuccess,
+            () => Metadata.Empty,
+            () => { });
 }

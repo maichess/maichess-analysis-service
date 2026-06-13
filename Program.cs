@@ -15,6 +15,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
+using StackExchange.Redis;
 
 DotNetEnv.Env.Load();
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
@@ -29,14 +30,29 @@ string userServiceUrl = builder.Configuration["Services:UserService"]
     ?? throw new InvalidOperationException("Services:UserService is not configured");
 string jwtKey = builder.Configuration["Jwt:Key"]
     ?? throw new InvalidOperationException("Jwt:Key is not configured");
+string redisUrl = builder.Configuration.GetConnectionString("Redis")
+    ?? throw new InvalidOperationException("ConnectionStrings:Redis is not configured");
 
 builder.Services.AddSingleton(new Database.DatabaseClient(GrpcChannel.ForAddress(dbUrl)));
 builder.Services.AddSingleton(new Bots.BotsClient(GrpcChannel.ForAddress(engineUrl)));
 builder.Services.AddSingleton(new Moves.MovesClient(GrpcChannel.ForAddress(moveValidatorUrl)));
 builder.Services.AddSingleton(new Users.UsersClient(GrpcChannel.ForAddress(userServiceUrl)));
 
+// Redis L1 over the durable Mongo analysis_results cache (L2) for the default bot's
+// hot positions. analysis:{botId}:{fen} hashes, no expiry (allkeys-lru), rebuildable
+// from Mongo. Reuses the shared Redis instance. See caching-and-read-models.md (Part A).
+builder.Services.AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(redisUrl));
+builder.Services.AddSingleton<IAnalysisResultCache, RedisAnalysisResultCache>();
+
 builder.Services.AddSingleton<IAnalysisGameRepository, AnalysisGameRepository>();
-builder.Services.AddSingleton<IAnalysisResultRepository, AnalysisResultRepository>();
+
+// The session service sees a single IAnalysisResultRepository: the L1 decorator
+// wrapping the durable Mongo repository. The inner repo stays unchanged.
+builder.Services.AddSingleton<AnalysisResultRepository>();
+builder.Services.AddSingleton<IAnalysisResultRepository>(sp => new CachingAnalysisResultRepository(
+    sp.GetRequiredService<AnalysisResultRepository>(),
+    sp.GetRequiredService<IAnalysisResultCache>(),
+    sp.GetRequiredService<IOptions<AnalysisConfig>>()));
 builder.Services.AddSingleton<AnalysisMetaRepository>();
 builder.Services.AddSingleton<AnalysisGameService>();
 builder.Services.AddSingleton<AnalysisSessionService>();
@@ -118,6 +134,12 @@ if (storedBotId != defaultBotId)
 {
     await startupDb.DeleteWhereAsync(
         new DeleteWhereRequest { Collection = "analysis_results", Filter = new Struct() });
+
+    // Clear the L1 too, not just Mongo — otherwise stale analysis from the previous
+    // default bot would survive in Redis and be served ahead of the (now empty) L2.
+    await app.Services.GetRequiredService<IAnalysisResultCache>()
+        .ClearAllAsync(CancellationToken.None);
+
     await startupMetaRepo.UpsertStoredBotIdAsync(defaultBotId, CancellationToken.None);
 }
 

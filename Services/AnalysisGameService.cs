@@ -150,7 +150,7 @@ internal sealed class AnalysisGameService(
             ListMatchesByFieldAsync("white_user_id", userId, ct),
             ListMatchesByFieldAsync("black_user_id", userId, ct));
 
-        Dictionary<string, Struct> deduped = new(StringComparer.Ordinal);
+        Dictionary<string, (string Status, Struct Record)> deduped = new(StringComparer.Ordinal);
         foreach (Struct record in both[0].Records.Concat(both[1].Records))
         {
             string? id = GetStringField(record, "id");
@@ -165,11 +165,11 @@ internal sealed class AnalysisGameService(
                 continue;
             }
 
-            deduped[id] = record;
+            deduped[id] = (status, record);
         }
 
         UserMatchSummary[] resolved = await Task.WhenAll(
-            deduped.Values.Select(r => BuildUserMatchSummaryAsync(r, ct)));
+            deduped.Select(kv => BuildUserMatchSummaryAsync(kv.Key, kv.Value.Status, kv.Value.Record, ct)));
         List<UserMatchSummary> all = [.. resolved.OrderByDescending(m => m.FinishedAtMs)];
 
         long total = all.Count;
@@ -302,13 +302,6 @@ internal sealed class AnalysisGameService(
                 .Where(x => x.KindCase == Value.KindOneofCase.StringValue)
                 .Select(x => x.StringValue)]
             : [];
-
-    private static Dictionary<string, string> BuildPlayerInfo(string? userId, string? botId) =>
-        userId is not null && userId.Length > 0
-            ? new Dictionary<string, string> { ["user_id"] = userId }
-            : botId is not null && botId.Length > 0
-                ? new Dictionary<string, string> { ["bot_id"] = botId }
-                : [];
 
     private static Dictionary<string, string> BuildMatchTags(string result) =>
         new()
@@ -448,11 +441,11 @@ internal sealed class AnalysisGameService(
     }
 
     private async Task<UserMatchSummary> BuildUserMatchSummaryAsync(
+        string id,
+        string status,
         Struct record,
         CancellationToken ct)
     {
-        string? id = GetStringField(record, "id");
-        string status = GetStringField(record, "status") ?? string.Empty;
         Dictionary<string, string> white = await ResolvePlayerInfoAsync(
             GetStringField(record, "white_user_id"),
             GetStringField(record, "white_bot_id"),
@@ -467,7 +460,7 @@ internal sealed class AnalysisGameService(
         long finishedAtMs = ParseLastMoveAtMs(record);
 
         return new UserMatchSummary(
-            MatchId: id ?? string.Empty,
+            MatchId: id,
             White: white,
             Black: black,
             Status: status,

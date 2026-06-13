@@ -283,7 +283,7 @@ internal sealed class AnalysisSessionService(
 
         bool sideIsWhite = isWhiteToMove;
         int currentNumber = moveNumber;
-        int i = 0;
+        bool isFirst = true;
 
         foreach (string san in sanMoves)
         {
@@ -291,7 +291,7 @@ internal sealed class AnalysisSessionService(
             {
                 sb.Append(CultureInfo.InvariantCulture, $"{currentNumber}. ");
             }
-            else if (i == 0)
+            else if (isFirst)
             {
                 sb.Append(CultureInfo.InvariantCulture, $"{currentNumber}... ");
             }
@@ -305,7 +305,7 @@ internal sealed class AnalysisSessionService(
             }
 
             sideIsWhite = !sideIsWhite;
-            i++;
+            isFirst = false;
         }
 
         sb.Append('*');
