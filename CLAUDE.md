@@ -162,7 +162,7 @@ when investigating whether tests genuinely exercise behaviour.
 | `Services:MoveValidatorService` | Move Validator gRPC address |
 | `Services:UserService` | User Service gRPC address (username resolution) |
 | `Jwt:Key` | JWT signing key (same value as other services) |
-| `Analysis:DefaultBotId` | Bot ID whose analysis results are cached. Mismatch triggers cache scrape on startup. |
+| `Analysis:DefaultBotId` | Default analysis bot; its results are cached. Set to the tier-5 knowledge bot `knowledge_classical` (task 26). The analysis cache key includes `bot_id` (Mongo `{fen, bot_id}`, Redis `analysis:{botId}:{fen}`), so a default change never serves stale lines from the old default; a mismatch additionally triggers a full cache scrape on startup. |
 | `Analysis:DefaultLineCount` | Line count used for caching (analysis results are only written when `line_count` matches this value) |
 | `KAFKA_ENABLED` | `true` routes analysis session control over Kafka (`analysis.commands.v1` / `analysis.events.v1`) instead of the synchronous `Engine.AnalyzePosition` gRPC stream. Staging only; unset/false in prod. See `CONTRACT_NOTES.md` (Kafka task 07). |
 | `KAFKA_BOOTSTRAP` | Kafka bootstrap servers (default `kafka:9092`). Used for the `socket.outbound.v1` push producer (always) and, when `KAFKA_ENABLED`, the analysis command/event streams. |
