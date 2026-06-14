@@ -5,6 +5,7 @@ using Maichess.Engine.V1;
 using Maichess.MoveValidator.V1;
 using Maichess.User.V1;
 using MaichessAnalysisService.Domain;
+using MaichessAnalysisService.Services;
 using MaichessAnalysisService.Tests.Support;
 using NSubstitute;
 using Xunit;
@@ -212,11 +213,67 @@ public sealed class AnalysisGameServiceMatchCoverageTests
         SetupList("black_user_id", "u", Finished("keep", "black_won"));
 
         (IReadOnlyList<UserMatchSummary> Matches, long Total, int Page, int PageSize) result =
-            await ctx.Service.ListUserMatchesAsync("u", 1, 20, CancellationToken.None);
+            await ctx.Service.ListUserMatchesAsync("u", UserMatchStatusFilter.Finished, 1, 20, CancellationToken.None);
 
         UserMatchSummary only = Assert.Single(result.Matches);
         Assert.Equal("keep", only.MatchId);
         Assert.Equal("white_won", only.Status);
+    }
+
+    [Fact]
+    public async Task List_OngoingFilter_ReturnsOnlyOngoingMatches()
+    {
+        Struct ongoing = new();
+        ongoing.Fields["id"] = Value.ForString("ong");
+        ongoing.Fields["status"] = Value.ForString("ongoing");
+        SetupList("white_user_id", "u", ongoing, Finished("done", "white_won"));
+        SetupList("black_user_id", "u");
+
+        (IReadOnlyList<UserMatchSummary> Matches, _, _, _) =
+            await ctx.Service.ListUserMatchesAsync("u", UserMatchStatusFilter.Ongoing, 1, 20, CancellationToken.None);
+
+        UserMatchSummary only = Assert.Single(Matches);
+        Assert.Equal("ong", only.MatchId);
+        Assert.Equal("ongoing", only.Status);
+    }
+
+    [Fact]
+    public async Task List_AllFilter_ReturnsOngoingAndFinishedButNotEmptyStatus()
+    {
+        Struct ongoing = new();
+        ongoing.Fields["id"] = Value.ForString("ong");
+        ongoing.Fields["status"] = Value.ForString("ongoing");
+
+        Struct noStatus = new();
+        noStatus.Fields["id"] = Value.ForString("nostatus");
+
+        SetupList("white_user_id", "u", ongoing, Finished("done", "white_won"), noStatus);
+        SetupList("black_user_id", "u");
+
+        (IReadOnlyList<UserMatchSummary> Matches, _, _, _) =
+            await ctx.Service.ListUserMatchesAsync("u", UserMatchStatusFilter.All, 1, 20, CancellationToken.None);
+
+        Assert.Equal(2, Matches.Count);
+        Assert.Contains(Matches, m => m.MatchId == "ong");
+        Assert.Contains(Matches, m => m.MatchId == "done");
+    }
+
+    [Fact]
+    public void ParseStatusFilter_MapsKnownValues()
+    {
+        Assert.Equal(UserMatchStatusFilter.Finished, AnalysisGameService.ParseStatusFilter(null));
+        Assert.Equal(UserMatchStatusFilter.Finished, AnalysisGameService.ParseStatusFilter(string.Empty));
+        Assert.Equal(UserMatchStatusFilter.Finished, AnalysisGameService.ParseStatusFilter("finished"));
+        Assert.Equal(UserMatchStatusFilter.Ongoing, AnalysisGameService.ParseStatusFilter("ongoing"));
+        Assert.Equal(UserMatchStatusFilter.All, AnalysisGameService.ParseStatusFilter("all"));
+    }
+
+    [Fact]
+    public void ParseStatusFilter_InvalidValue_Throws()
+    {
+        InvalidMatchStatusFilterException ex =
+            Assert.Throws<InvalidMatchStatusFilterException>(() => AnalysisGameService.ParseStatusFilter("bogus"));
+        Assert.Equal("bogus", ex.Value);
     }
 
     // ── ReadTimeFormat / ParseLastMoveAtMs / GetStringList ───────────────────
@@ -238,7 +295,7 @@ public sealed class AnalysisGameServiceMatchCoverageTests
         SetupList("black_user_id", "u");
 
         (IReadOnlyList<UserMatchSummary> Matches, _, _, _) =
-            await ctx.Service.ListUserMatchesAsync("u", 1, 20, CancellationToken.None);
+            await ctx.Service.ListUserMatchesAsync("u", UserMatchStatusFilter.Finished, 1, 20, CancellationToken.None);
 
         UserMatchSummary summary = Assert.Single(Matches);
         Assert.Equal(expectedId, summary.TimeFormat.Id);
@@ -266,7 +323,7 @@ public sealed class AnalysisGameServiceMatchCoverageTests
         SetupList("black_user_id", "u");
 
         (IReadOnlyList<UserMatchSummary> Matches, _, _, _) =
-            await ctx.Service.ListUserMatchesAsync("u", 1, 20, CancellationToken.None);
+            await ctx.Service.ListUserMatchesAsync("u", UserMatchStatusFilter.Finished, 1, 20, CancellationToken.None);
 
         Assert.Equal(2, Matches.Count);
         Assert.All(Matches, s => Assert.Equal(0, s.FinishedAtMs));
@@ -292,7 +349,7 @@ public sealed class AnalysisGameServiceMatchCoverageTests
         SetupList("black_user_id", "u");
 
         (IReadOnlyList<UserMatchSummary> Matches, _, _, _) =
-            await ctx.Service.ListUserMatchesAsync("u", 1, 20, CancellationToken.None);
+            await ctx.Service.ListUserMatchesAsync("u", UserMatchStatusFilter.Finished, 1, 20, CancellationToken.None);
 
         UserMatchSummary summary = Assert.Single(Matches);
         Assert.Equal("3+2", summary.TimeFormat.Id);

@@ -1,5 +1,6 @@
 Feature: Import From Match
-  A user can import a finished match into their analysis games.
+  A user can import a match into their analysis games. Finished matches import in full;
+  ongoing matches import as a point-in-time snapshot of the moves played so far.
 
   Scenario: Finished match with moves imports successfully
     Given match "match-1" exists with status "white_won" and white user "user-1" and black user "user-2"
@@ -9,10 +10,12 @@ Feature: Import From Match
     And the result game match id is "match-1"
     And the result game has 1 moves
 
-  Scenario: Ongoing match import throws MatchStillOngoingException
+  Scenario: Ongoing match imports as a snapshot with an open-ended result
     Given match "match-2" exists with status "ongoing" and white user "user-1" and black user "user-2"
     When "user-1" imports match "match-2"
-    Then a MatchStillOngoingException is thrown
+    Then the result game source is "match"
+    And the result game match id is "match-2"
+    And the result game result is "*"
 
   Scenario: Import by non-participant non-creator throws MatchAccessDeniedException
     Given match "match-3" exists with status "white_won" and white user "user-1" and black user "user-2"

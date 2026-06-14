@@ -60,13 +60,13 @@ public sealed class AnalysisEndpointHelpersTests
     }
 
     [Fact]
-    public void MatchOngoingResult_Returns400WithMatchOngoingMessage()
+    public void InvalidStatusResult_Returns400WithInvalidStatusMessage()
     {
-        IResult result = AnalysisEndpointHelpers.MatchOngoingResult();
+        IResult result = AnalysisEndpointHelpers.InvalidStatusResult("bogus");
 
         BadRequest<ErrorResponse> badRequest = Assert.IsType<BadRequest<ErrorResponse>>(result);
         Assert.Equal(400, ((IStatusCodeHttpResult)badRequest).StatusCode);
-        Assert.Equal("match is still ongoing", badRequest.Value!.Error);
+        Assert.Equal("invalid status: bogus", badRequest.Value!.Error);
     }
 
     [Fact]

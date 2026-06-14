@@ -26,8 +26,10 @@ namespace MaichessAnalysisService.Tests.Features
         
         private static string[] featureTags = ((string[])(null));
         
-        private static global::Reqnroll.FeatureInfo featureInfo = new global::Reqnroll.FeatureInfo(new System.Globalization.CultureInfo("en-US"), "Features", "List User Matches", ("  Users can list their finished matches imported directly from match-db.\r\n  Ongoi" +
-                "ng matches are filtered out and results are paginated."), global::Reqnroll.ProgrammingLanguage.CSharp, featureTags);
+        private static global::Reqnroll.FeatureInfo featureInfo = new global::Reqnroll.FeatureInfo(new System.Globalization.CultureInfo("en-US"), "Features", "List User Matches", @"  Users can list their matches imported directly from match-db. By default only
+  finished matches are returned; the status filter can additionally surface ongoing
+  games so a player can open one for review while it is still in progress. Results
+  are paginated.", global::Reqnroll.ProgrammingLanguage.CSharp, featureTags);
         
         private Xunit.Abstractions.ITestOutputHelper _testOutputHelper;
         
@@ -101,7 +103,7 @@ namespace MaichessAnalysisService.Tests.Features
             string[] tagsOfScenario = ((string[])(null));
             System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
             global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Finished matches from both sides are returned newest first", null, tagsOfScenario, argumentsOfScenario, featureTags);
-#line 5
+#line 7
   this.ScenarioInitialize(scenarioInfo);
 #line hidden
             if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
@@ -121,7 +123,7 @@ namespace MaichessAnalysisService.Tests.Features
                             "white_won",
                             "5+0",
                             "2026-05-01T10:00:00Z"});
-#line 6
+#line 8
     await testRunner.GivenAsync("user \"user-1\" has the following finished matches as white:", ((string)(null)), table1, "Given ");
 #line hidden
                 global::Reqnroll.Table table2 = new global::Reqnroll.Table(new string[] {
@@ -134,19 +136,19 @@ namespace MaichessAnalysisService.Tests.Features
                             "black_won",
                             "3+2",
                             "2026-05-02T11:00:00Z"});
-#line 9
+#line 11
     await testRunner.AndAsync("user \"user-1\" has the following finished matches as black:", ((string)(null)), table2, "And ");
 #line hidden
-#line 12
+#line 14
     await testRunner.WhenAsync("\"user-1\" lists their finished matches page 1 page_size 20", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
-#line 13
+#line 15
     await testRunner.ThenAsync("the user matches result contains 2 matches", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
-#line 14
+#line 16
     await testRunner.AndAsync("the user matches result total is 2", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
-#line 15
+#line 17
     await testRunner.AndAsync("the user matches result first match id is \"match-2\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
             }
@@ -161,7 +163,7 @@ namespace MaichessAnalysisService.Tests.Features
             string[] tagsOfScenario = ((string[])(null));
             System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
             global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Ongoing matches are excluded from the list", null, tagsOfScenario, argumentsOfScenario, featureTags);
-#line 17
+#line 19
   this.ScenarioInitialize(scenarioInfo);
 #line hidden
             if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
@@ -186,105 +188,34 @@ namespace MaichessAnalysisService.Tests.Features
                             "white_won",
                             "5+0",
                             "2026-05-02T10:00:00Z"});
-#line 18
+#line 20
     await testRunner.GivenAsync("user \"user-1\" has the following finished matches as white:", ((string)(null)), table3, "Given ");
 #line hidden
-#line 22
+#line 24
     await testRunner.AndAsync("user \"user-1\" has no finished matches as black", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
-#line 23
+#line 25
     await testRunner.WhenAsync("\"user-1\" lists their finished matches page 1 page_size 20", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
-#line 24
+#line 26
     await testRunner.ThenAsync("the user matches result contains 1 matches", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
-#line 25
+#line 27
     await testRunner.AndAsync("the user matches result first match id is \"match-2\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
             }
             await this.ScenarioCleanupAsync();
         }
         
-        [Xunit.SkippableFactAttribute(DisplayName="Pagination returns the requested slice")]
+        [Xunit.SkippableFactAttribute(DisplayName="Status all surfaces both ongoing and finished matches")]
         [Xunit.TraitAttribute("FeatureTitle", "List User Matches")]
-        [Xunit.TraitAttribute("Description", "Pagination returns the requested slice")]
-        public async System.Threading.Tasks.Task PaginationReturnsTheRequestedSlice()
+        [Xunit.TraitAttribute("Description", "Status all surfaces both ongoing and finished matches")]
+        public async System.Threading.Tasks.Task StatusAllSurfacesBothOngoingAndFinishedMatches()
         {
             string[] tagsOfScenario = ((string[])(null));
             System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
-            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Pagination returns the requested slice", null, tagsOfScenario, argumentsOfScenario, featureTags);
-#line 27
-  this.ScenarioInitialize(scenarioInfo);
-#line hidden
-            if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
-            {
-                testRunner.SkipScenario();
-            }
-            else
-            {
-                await this.ScenarioStartAsync();
-#line 28
-    await testRunner.GivenAsync("user \"user-1\" has 5 finished matches as white starting \"2026-05-01T10:00:00Z\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
-#line hidden
+            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Status all surfaces both ongoing and finished matches", null, tagsOfScenario, argumentsOfScenario, featureTags);
 #line 29
-    await testRunner.AndAsync("user \"user-1\" has no finished matches as black", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
-#line hidden
-#line 30
-    await testRunner.WhenAsync("\"user-1\" lists their finished matches page 2 page_size 2", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
-#line hidden
-#line 31
-    await testRunner.ThenAsync("the user matches result contains 2 matches", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
-#line hidden
-#line 32
-    await testRunner.AndAsync("the user matches result total is 5", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
-#line hidden
-            }
-            await this.ScenarioCleanupAsync();
-        }
-        
-        [Xunit.SkippableFactAttribute(DisplayName="page_size is clamped to 100")]
-        [Xunit.TraitAttribute("FeatureTitle", "List User Matches")]
-        [Xunit.TraitAttribute("Description", "page_size is clamped to 100")]
-        public async System.Threading.Tasks.Task Page_SizeIsClampedTo100()
-        {
-            string[] tagsOfScenario = ((string[])(null));
-            System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
-            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("page_size is clamped to 100", null, tagsOfScenario, argumentsOfScenario, featureTags);
-#line 34
-  this.ScenarioInitialize(scenarioInfo);
-#line hidden
-            if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
-            {
-                testRunner.SkipScenario();
-            }
-            else
-            {
-                await this.ScenarioStartAsync();
-#line 35
-    await testRunner.GivenAsync("user \"user-1\" has no finished matches as white", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
-#line hidden
-#line 36
-    await testRunner.AndAsync("user \"user-1\" has no finished matches as black", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
-#line hidden
-#line 37
-    await testRunner.WhenAsync("\"user-1\" lists their finished matches page 1 page_size 500", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
-#line hidden
-#line 38
-    await testRunner.ThenAsync("the user matches result page_size is 100", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
-#line hidden
-            }
-            await this.ScenarioCleanupAsync();
-        }
-        
-        [Xunit.SkippableFactAttribute(DisplayName="The time format embedded in a match is preserved")]
-        [Xunit.TraitAttribute("FeatureTitle", "List User Matches")]
-        [Xunit.TraitAttribute("Description", "The time format embedded in a match is preserved")]
-        public async System.Threading.Tasks.Task TheTimeFormatEmbeddedInAMatchIsPreserved()
-        {
-            string[] tagsOfScenario = ((string[])(null));
-            System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
-            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("The time format embedded in a match is preserved", null, tagsOfScenario, argumentsOfScenario, featureTags);
-#line 40
   this.ScenarioInitialize(scenarioInfo);
 #line hidden
             if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
@@ -301,22 +232,194 @@ namespace MaichessAnalysisService.Tests.Features
                             "last_move_at"});
                 table4.AddRow(new string[] {
                             "match-1",
+                            "ongoing",
+                            "5+0",
+                            "2026-05-01T10:00:00Z"});
+                table4.AddRow(new string[] {
+                            "match-2",
+                            "white_won",
+                            "5+0",
+                            "2026-05-02T10:00:00Z"});
+#line 30
+    await testRunner.GivenAsync("user \"user-1\" has the following finished matches as white:", ((string)(null)), table4, "Given ");
+#line hidden
+#line 34
+    await testRunner.AndAsync("user \"user-1\" has no finished matches as black", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 35
+    await testRunner.WhenAsync("\"user-1\" lists their matches with status \"all\" page 1 page_size 20", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line hidden
+#line 36
+    await testRunner.ThenAsync("the user matches result contains 2 matches", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+#line hidden
+            }
+            await this.ScenarioCleanupAsync();
+        }
+        
+        [Xunit.SkippableFactAttribute(DisplayName="Status ongoing surfaces only in-progress matches")]
+        [Xunit.TraitAttribute("FeatureTitle", "List User Matches")]
+        [Xunit.TraitAttribute("Description", "Status ongoing surfaces only in-progress matches")]
+        public async System.Threading.Tasks.Task StatusOngoingSurfacesOnlyIn_ProgressMatches()
+        {
+            string[] tagsOfScenario = ((string[])(null));
+            System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
+            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Status ongoing surfaces only in-progress matches", null, tagsOfScenario, argumentsOfScenario, featureTags);
+#line 38
+  this.ScenarioInitialize(scenarioInfo);
+#line hidden
+            if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
+            {
+                testRunner.SkipScenario();
+            }
+            else
+            {
+                await this.ScenarioStartAsync();
+                global::Reqnroll.Table table5 = new global::Reqnroll.Table(new string[] {
+                            "id",
+                            "status",
+                            "time_format_id",
+                            "last_move_at"});
+                table5.AddRow(new string[] {
+                            "match-1",
+                            "ongoing",
+                            "5+0",
+                            "2026-05-01T10:00:00Z"});
+                table5.AddRow(new string[] {
+                            "match-2",
+                            "white_won",
+                            "5+0",
+                            "2026-05-02T10:00:00Z"});
+#line 39
+    await testRunner.GivenAsync("user \"user-1\" has the following finished matches as white:", ((string)(null)), table5, "Given ");
+#line hidden
+#line 43
+    await testRunner.AndAsync("user \"user-1\" has no finished matches as black", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 44
+    await testRunner.WhenAsync("\"user-1\" lists their matches with status \"ongoing\" page 1 page_size 20", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line hidden
+#line 45
+    await testRunner.ThenAsync("the user matches result contains 1 matches", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+#line hidden
+#line 46
+    await testRunner.AndAsync("the user matches result first match id is \"match-1\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+            }
+            await this.ScenarioCleanupAsync();
+        }
+        
+        [Xunit.SkippableFactAttribute(DisplayName="Pagination returns the requested slice")]
+        [Xunit.TraitAttribute("FeatureTitle", "List User Matches")]
+        [Xunit.TraitAttribute("Description", "Pagination returns the requested slice")]
+        public async System.Threading.Tasks.Task PaginationReturnsTheRequestedSlice()
+        {
+            string[] tagsOfScenario = ((string[])(null));
+            System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
+            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Pagination returns the requested slice", null, tagsOfScenario, argumentsOfScenario, featureTags);
+#line 48
+  this.ScenarioInitialize(scenarioInfo);
+#line hidden
+            if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
+            {
+                testRunner.SkipScenario();
+            }
+            else
+            {
+                await this.ScenarioStartAsync();
+#line 49
+    await testRunner.GivenAsync("user \"user-1\" has 5 finished matches as white starting \"2026-05-01T10:00:00Z\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
+#line hidden
+#line 50
+    await testRunner.AndAsync("user \"user-1\" has no finished matches as black", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 51
+    await testRunner.WhenAsync("\"user-1\" lists their finished matches page 2 page_size 2", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line hidden
+#line 52
+    await testRunner.ThenAsync("the user matches result contains 2 matches", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+#line hidden
+#line 53
+    await testRunner.AndAsync("the user matches result total is 5", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+            }
+            await this.ScenarioCleanupAsync();
+        }
+        
+        [Xunit.SkippableFactAttribute(DisplayName="page_size is clamped to 100")]
+        [Xunit.TraitAttribute("FeatureTitle", "List User Matches")]
+        [Xunit.TraitAttribute("Description", "page_size is clamped to 100")]
+        public async System.Threading.Tasks.Task Page_SizeIsClampedTo100()
+        {
+            string[] tagsOfScenario = ((string[])(null));
+            System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
+            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("page_size is clamped to 100", null, tagsOfScenario, argumentsOfScenario, featureTags);
+#line 55
+  this.ScenarioInitialize(scenarioInfo);
+#line hidden
+            if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
+            {
+                testRunner.SkipScenario();
+            }
+            else
+            {
+                await this.ScenarioStartAsync();
+#line 56
+    await testRunner.GivenAsync("user \"user-1\" has no finished matches as white", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
+#line hidden
+#line 57
+    await testRunner.AndAsync("user \"user-1\" has no finished matches as black", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
+#line 58
+    await testRunner.WhenAsync("\"user-1\" lists their finished matches page 1 page_size 500", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
+#line hidden
+#line 59
+    await testRunner.ThenAsync("the user matches result page_size is 100", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+#line hidden
+            }
+            await this.ScenarioCleanupAsync();
+        }
+        
+        [Xunit.SkippableFactAttribute(DisplayName="The time format embedded in a match is preserved")]
+        [Xunit.TraitAttribute("FeatureTitle", "List User Matches")]
+        [Xunit.TraitAttribute("Description", "The time format embedded in a match is preserved")]
+        public async System.Threading.Tasks.Task TheTimeFormatEmbeddedInAMatchIsPreserved()
+        {
+            string[] tagsOfScenario = ((string[])(null));
+            System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
+            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("The time format embedded in a match is preserved", null, tagsOfScenario, argumentsOfScenario, featureTags);
+#line 61
+  this.ScenarioInitialize(scenarioInfo);
+#line hidden
+            if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
+            {
+                testRunner.SkipScenario();
+            }
+            else
+            {
+                await this.ScenarioStartAsync();
+                global::Reqnroll.Table table6 = new global::Reqnroll.Table(new string[] {
+                            "id",
+                            "status",
+                            "time_format_id",
+                            "last_move_at"});
+                table6.AddRow(new string[] {
+                            "match-1",
                             "white_won",
                             "3+2",
                             "2026-05-01T10:00:00Z"});
-#line 41
-    await testRunner.GivenAsync("user \"user-1\" has the following finished matches as white:", ((string)(null)), table4, "Given ");
+#line 62
+    await testRunner.GivenAsync("user \"user-1\" has the following finished matches as white:", ((string)(null)), table6, "Given ");
 #line hidden
-#line 44
+#line 65
     await testRunner.AndAsync("user \"user-1\" has no finished matches as black", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
-#line 45
+#line 66
     await testRunner.WhenAsync("\"user-1\" lists their finished matches page 1 page_size 20", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
-#line 46
+#line 67
     await testRunner.ThenAsync("the user matches first time format id is \"3+2\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
-#line 47
+#line 68
     await testRunner.AndAsync("the user matches first increment ms is 2000", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
             }

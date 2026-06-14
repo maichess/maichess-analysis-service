@@ -45,6 +45,7 @@ internal static class AnalysisEndpoints
     private static async Task<IResult> ListUserMatches(
         ClaimsPrincipal principal,
         AnalysisGameService service,
+        [FromQuery] string? status = null,
         [FromQuery] int page = 1,
         [FromQuery(Name = "page_size")] int pageSize = 20,
         CancellationToken ct = default)
@@ -54,8 +55,18 @@ internal static class AnalysisEndpoints
             return Results.Unauthorized();
         }
 
+        UserMatchStatusFilter filter;
+        try
+        {
+            filter = AnalysisGameService.ParseStatusFilter(status);
+        }
+        catch (InvalidMatchStatusFilterException ex)
+        {
+            return AnalysisEndpointHelpers.InvalidStatusResult(ex.Value);
+        }
+
         (IReadOnlyList<UserMatchSummary> matches, long total, int p, int ps) =
-            await service.ListUserMatchesAsync(userId, page, pageSize, ct);
+            await service.ListUserMatchesAsync(userId, filter, page, pageSize, ct);
 
         return Results.Ok(new UserMatchesListResponse(
             [.. matches.Select(AnalysisGameMapper.ToUserMatchSummary)],
@@ -153,10 +164,6 @@ internal static class AnalysisEndpoints
         catch (AnalysisGameNotFoundException)
         {
             return AnalysisEndpointHelpers.NotFoundResult();
-        }
-        catch (MatchStillOngoingException)
-        {
-            return AnalysisEndpointHelpers.MatchOngoingResult();
         }
         catch (MatchAccessDeniedException)
         {

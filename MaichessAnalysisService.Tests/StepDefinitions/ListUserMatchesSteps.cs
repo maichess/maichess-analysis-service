@@ -1,4 +1,6 @@
 using System.Globalization;
+using MaichessAnalysisService.Domain;
+using MaichessAnalysisService.Services;
 using MaichessAnalysisService.Tests.Support;
 using Reqnroll;
 using Xunit;
@@ -62,11 +64,18 @@ internal sealed class ListUserMatchesSteps(AnalysisServiceContext context)
     }
 
     [When(@"""([^""]*)"" lists their finished matches page (\d+) page_size (\d+)")]
-    public async Task WhenListsFinishedMatches(string userIdArg, int page, int pageSize)
+    public async Task WhenListsFinishedMatches(string userIdArg, int page, int pageSize) =>
+        await ListWithFilter(userIdArg, UserMatchStatusFilter.Finished, page, pageSize);
+
+    [When(@"""([^""]*)"" lists their matches with status ""([^""]*)"" page (\d+) page_size (\d+)")]
+    public async Task WhenListsMatchesWithStatus(string userIdArg, string status, int page, int pageSize) =>
+        await ListWithFilter(userIdArg, AnalysisGameService.ParseStatusFilter(status), page, pageSize);
+
+    private async Task ListWithFilter(string userIdArg, UserMatchStatusFilter filter, int page, int pageSize)
     {
         context.SetupUserMatches(userIdArg, whiteMatches, blackMatches);
         context.LastUserMatchesResult = await context.Service.ListUserMatchesAsync(
-            userIdArg, page, pageSize, CancellationToken.None);
+            userIdArg, filter, page, pageSize, CancellationToken.None);
     }
 
     [Then(@"the user matches result contains (\d+) matches")]

@@ -20,8 +20,8 @@ internal static class AnalysisEndpointHelpers
     internal static IResult InvalidPgnResult(string reason) =>
         Results.BadRequest(new ErrorResponse(reason));
 
-    internal static IResult MatchOngoingResult() =>
-        Results.BadRequest(new ErrorResponse("match is still ongoing"));
+    internal static IResult InvalidStatusResult(string value) =>
+        Results.BadRequest(new ErrorResponse($"invalid status: {value}"));
 
     internal static IResult SessionNotFoundResult() => Results.NotFound();
 

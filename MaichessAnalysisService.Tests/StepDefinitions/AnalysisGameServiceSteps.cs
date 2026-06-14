@@ -255,10 +255,6 @@ internal sealed class AnalysisGameServiceSteps(AnalysisServiceContext context)
     public void ThenAccessDeniedExceptionIsThrown() =>
         Assert.IsType<AccessDeniedException>(context.LastException);
 
-    [Then(@"a MatchStillOngoingException is thrown")]
-    public void ThenMatchStillOngoingExceptionIsThrown() =>
-        Assert.IsType<MatchStillOngoingException>(context.LastException);
-
     [Then(@"a MatchAccessDeniedException is thrown")]
     public void ThenMatchAccessDeniedExceptionIsThrown() =>
         Assert.IsType<MatchAccessDeniedException>(context.LastException);

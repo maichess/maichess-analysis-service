@@ -59,6 +59,14 @@ internal sealed class AnalysisGameService(
         return (tags, sanMoves, hasContent);
     }
 
+    internal static UserMatchStatusFilter ParseStatusFilter(string? status) => status switch
+    {
+        null or "" or "finished" => UserMatchStatusFilter.Finished,
+        "ongoing" => UserMatchStatusFilter.Ongoing,
+        "all" => UserMatchStatusFilter.All,
+        _ => throw new InvalidMatchStatusFilterException(status),
+    };
+
     internal async Task<AnalysisGame> GetGameAsync(string id, string userId, CancellationToken ct)
     {
         AnalysisGame game = await repo.GetByIdAsync(id, ct) ?? throw new AnalysisGameNotFoundException();
@@ -141,7 +149,7 @@ internal sealed class AnalysisGameService(
     }
 
     internal async Task<(IReadOnlyList<UserMatchSummary> Matches, long Total, int Page, int PageSize)>
-        ListUserMatchesAsync(string userId, int page, int pageSize, CancellationToken ct)
+        ListUserMatchesAsync(string userId, UserMatchStatusFilter filter, int page, int pageSize, CancellationToken ct)
     {
         pageSize = Math.Clamp(pageSize, 1, 100);
         page = Math.Max(1, page);
@@ -160,7 +168,7 @@ internal sealed class AnalysisGameService(
             }
 
             string status = GetStringField(record, "status") ?? string.Empty;
-            if (status == "ongoing" || string.IsNullOrEmpty(status))
+            if (string.IsNullOrEmpty(status) || !MatchesStatusFilter(status, filter))
             {
                 continue;
             }
@@ -196,12 +204,10 @@ internal sealed class AnalysisGameService(
         }
 
         Struct match = matchResp.Record;
-        string status = GetStringField(match, "status") ?? string.Empty;
 
-        if (status == "ongoing")
-        {
-            throw new MatchStillOngoingException();
-        }
+        // An ongoing match is importable too: it yields a snapshot of the moves
+        // played so far (result "*"), so a player can review a game in progress.
+        string status = GetStringField(match, "status") ?? string.Empty;
 
         string? whiteUserId = GetStringField(match, "white_user_id");
         string? blackUserId = GetStringField(match, "black_user_id");
@@ -290,6 +296,13 @@ internal sealed class AnalysisGameService(
 
         return await repo.InsertAsync(game, ct);
     }
+
+    private static bool MatchesStatusFilter(string status, UserMatchStatusFilter filter) => filter switch
+    {
+        UserMatchStatusFilter.Ongoing => status == "ongoing",
+        UserMatchStatusFilter.Finished => status != "ongoing",
+        _ => true,
+    };
 
     private static string? GetStringField(Struct s, string key) =>
         s.Fields.TryGetValue(key, out Value? v) && v.KindCase == Value.KindOneofCase.StringValue
