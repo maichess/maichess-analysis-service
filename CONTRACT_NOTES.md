@@ -20,6 +20,26 @@ and the client swallowed the error, so the button appeared dead.
 document already carries `created_by_user_id` (written by Match Manager), so no new
 fields or cross-service calls were needed.
 
+## Per-move clock annotations in PGN + GameDetail (move-times task) — additive
+
+`rest/analysis.md` `GET /games/{id}` (and the `201` bodies of the import endpoints, same schema)
+gains an **optional, additive** `clock_history` array: `{ white_time_ms, black_time_ms }` snapshots
+parallel to `moves` (`clock_history[i]` = clocks after `moves[i]`; same length as `moves`). It is
+**empty** when the source carried no clock data (FEN import, a clock-comment-free PGN, or a match
+document written before per-move clock history). No existing field changes type or meaning.
+
+- **Match import** reads the new `clock_history` off the match document (`Database.Get`,
+  collection `matches`) — see the match-manager `CONTRACT_NOTES`. The generated PGN emits a
+  standard `{[%clk H:MM:SS]}` comment after each move's SAN using the mover's remaining clock; with
+  no clock data the movetext is byte-for-byte what it was before this feature.
+- **PGN import** parses `{[%clk ...]}` / `{[%emt ...]}` comments into the same `clock_history`
+  representation (the mover's slot takes the parsed value; the opponent carries forward). The
+  original PGN text is still stored verbatim. As a side-fix, movetext extraction no longer keys off
+  the last `]` (clock comments contain `]`, which truncated the move list) — it now keys off the
+  end of the last tag pair.
+- `clock_history` is persisted on the `analysis_games` document (additive field) so it round-trips
+  to the detail response.
+
 ## Analysis cache per-depth document limit
 
 Cache reads use `Database.List(limit=100)`. With practical engine depth ceilings around 40, this

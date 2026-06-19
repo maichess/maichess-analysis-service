@@ -56,6 +56,23 @@ public sealed class AnalysisGameMapperTests
         Assert.Equal(game.Moves, detail.Moves);
         Assert.Equal(game.Fens, detail.Fens);
         Assert.Equal(game.Pgn, detail.Pgn);
+        Assert.Empty(detail.ClockHistory);
+    }
+
+    [Fact]
+    public void ToDetail_MapsClockHistory()
+    {
+        AnalysisGame game = AnalysisServiceContext.BuildGame() with
+        {
+            ClockHistory = [new ClockSnapshot(299_000, 300_000), new ClockSnapshot(299_000, 298_000)],
+        };
+
+        GameDetailResponse detail = AnalysisGameMapper.ToDetail(game);
+
+        Assert.Equal(2, detail.ClockHistory.Count);
+        Assert.Equal(299_000, detail.ClockHistory[0].WhiteTimeMs);
+        Assert.Equal(300_000, detail.ClockHistory[0].BlackTimeMs);
+        Assert.Equal(298_000, detail.ClockHistory[1].BlackTimeMs);
     }
 
     [Fact]

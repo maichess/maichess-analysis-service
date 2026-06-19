@@ -31,7 +31,8 @@ internal static class AnalysisGameMapper
             game.Tags,
             game.Moves,
             game.Fens,
-            game.Pgn);
+            game.Pgn,
+            [.. game.ClockHistory.Select(c => new ClockSnapshotResponse(c.WhiteTimeMs, c.BlackTimeMs))]);
 
     internal static UserMatchSummaryResponse ToUserMatchSummary(UserMatchSummary match) =>
         new(

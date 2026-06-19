@@ -86,6 +86,7 @@ internal sealed class AnalysisGameRepository(Database.DatabaseClient db) : IAnal
                 ["starting_fen"] = Value.ForString(game.StartingFen),
                 ["moves"] = Value.ForList(game.Moves.Select(Value.ForString).ToArray()),
                 ["fens"] = Value.ForList(game.Fens.Select(Value.ForString).ToArray()),
+                ["clock_history"] = Value.ForList(game.ClockHistory.Select(ClockToValue).ToArray()),
                 ["pgn"] = Value.ForString(game.Pgn),
                 ["result"] = Value.ForString(game.Result),
                 ["white"] = Value.ForStruct(DictToStruct(game.White)),
@@ -122,8 +123,27 @@ internal sealed class AnalysisGameRepository(Database.DatabaseClient db) : IAnal
             Black: StructToDict(s.Fields["black"].StructValue),
             Tags: StructToDict(s.Fields["tags"].StructValue),
             CreatedAt: DateTimeOffset.Parse(
-                s.Fields["created_at"].StringValue, CultureInfo.InvariantCulture));
+                s.Fields["created_at"].StringValue, CultureInfo.InvariantCulture),
+            ClockHistory: ReadClockHistory(s));
     }
+
+    private static Value ClockToValue(ClockSnapshot snapshot)
+    {
+        Struct s = new();
+        s.Fields["white_time_ms"] = Value.ForNumber(snapshot.WhiteTimeMs);
+        s.Fields["black_time_ms"] = Value.ForNumber(snapshot.BlackTimeMs);
+        return Value.ForStruct(s);
+    }
+
+    // Absent for games saved before clock_history existed; empty is "no clock data".
+    private static List<ClockSnapshot> ReadClockHistory(Struct s) =>
+        s.Fields.TryGetValue("clock_history", out Value? ch) && ch.KindCase == Value.KindOneofCase.ListValue
+            ? [.. ch.ListValue.Values
+                .Where(v => v.KindCase == Value.KindOneofCase.StructValue)
+                .Select(v => new ClockSnapshot(
+                    (long)v.StructValue.Fields["white_time_ms"].NumberValue,
+                    (long)v.StructValue.Fields["black_time_ms"].NumberValue))]
+            : [];
 
     private static Struct DictToStruct(IReadOnlyDictionary<string, string> dict)
     {

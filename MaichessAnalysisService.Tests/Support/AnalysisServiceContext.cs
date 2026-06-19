@@ -284,5 +284,6 @@ internal sealed class AnalysisServiceContext
             White: new Dictionary<string, string> { ["name"] = "White" },
             Black: new Dictionary<string, string> { ["name"] = "Black" },
             Tags: new Dictionary<string, string> { ["Event"] = "Test" },
-            CreatedAt: DateTimeOffset.UtcNow);
+            CreatedAt: DateTimeOffset.UtcNow,
+            ClockHistory: []);
 }

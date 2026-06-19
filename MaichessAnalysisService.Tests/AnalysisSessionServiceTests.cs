@@ -60,7 +60,8 @@ public sealed class AnalysisSessionServiceTests
             White: new Dictionary<string, string>(),
             Black: new Dictionary<string, string>(),
             Tags: new Dictionary<string, string>(),
-            CreatedAt: DateTimeOffset.UnixEpoch);
+            CreatedAt: DateTimeOffset.UnixEpoch,
+            ClockHistory: []);
 
     private async Task<(AnalysisSessionService Svc, AnalysisSession Session)> CreateAsync(
         bool withSink = false, AnalysisGame? game = null, int lineCount = DefaultLineCount)

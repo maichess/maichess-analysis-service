@@ -35,6 +35,17 @@ internal sealed class AnalysisGameService(
     private static readonly Regex ResultPattern =
         new(@"1-0|0-1|1/2-1/2|\*", RegexOptions.Compiled, TimeSpan.FromSeconds(5));
 
+    // Extracts the time token from a PGN clock comment: {[%clk 0:02:59]} or
+    // {[%emt 0:00:03]}. Both are treated as the mover's remaining clock — %emt is an
+    // elapsed-time annotation, but without a reliable base time we surface the value
+    // as-is so imported games still show per-move times.
+    private static readonly Regex ClockCommentPattern =
+        new(@"\[%(?:clk|emt)\s+([^\]\s]+)\]", RegexOptions.Compiled, TimeSpan.FromSeconds(5));
+
+    // A leading move-number prefix on a single movetext token: "1." or "12...".
+    private static readonly Regex MoveNumberPrefixPattern =
+        new(@"^\d+\.+", RegexOptions.Compiled, TimeSpan.FromSeconds(5));
+
     internal static (Dictionary<string, string> Tags, IReadOnlyList<string> SanMoves, bool HasContent)
         ParsePgn(string pgn)
     {
@@ -44,8 +55,7 @@ internal sealed class AnalysisGameService(
             tags[m.Groups[1].Value] = m.Groups[2].Value;
         }
 
-        int lastBracket = pgn.LastIndexOf(']');
-        string movetext = lastBracket >= 0 ? pgn[(lastBracket + 1)..] : pgn;
+        string movetext = ExtractMovetext(pgn);
 
         movetext = CommentPattern.Replace(movetext, " ");
         movetext = AnnotationPattern.Replace(movetext, " ");
@@ -57,6 +67,157 @@ internal sealed class AnalysisGameService(
 
         bool hasContent = tags.Count > 0 || sanMoves.Count > 0;
         return (tags, sanMoves, hasContent);
+    }
+
+    // The movetext is everything after the tag-pair section. Locate it by the end of
+    // the last `[Key "Value"]` tag rather than the last ']' — clock comments
+    // ({[%clk 0:02:59]}) contain ']', so LastIndexOf(']') would truncate the moves.
+    internal static string ExtractMovetext(string pgn)
+    {
+        System.Text.RegularExpressions.MatchCollection tags = TagPattern.Matches(pgn);
+        if (tags.Count == 0)
+        {
+            return pgn;
+        }
+
+        System.Text.RegularExpressions.Match last = tags[^1];
+        return pgn[(last.Index + last.Length)..];
+    }
+
+    // Parses per-ply remaining clocks from an imported PGN's {[%clk ...]}/{[%emt ...]}
+    // comments, aligned to the SAN moves ParsePgn extracts. clocks[i] is the mover's
+    // remaining time at ply i, or null when that move carried no clock comment.
+    internal static IReadOnlyList<long?> ParseMoveClocks(string pgn)
+    {
+        string movetext = ExtractMovetext(pgn);
+
+        // Strip annotations ($N) and the game result but keep {comments} and move
+        // numbers so each clock comment stays attached to the move it follows.
+        movetext = AnnotationPattern.Replace(movetext, " ");
+        movetext = ResultPattern.Replace(movetext, " ");
+
+        List<long?> clocks = [];
+        int i = 0;
+        while (i < movetext.Length)
+        {
+            char c = movetext[i];
+            if (char.IsWhiteSpace(c))
+            {
+                i++;
+                continue;
+            }
+
+            if (c == '{')
+            {
+                int end = movetext.IndexOf('}', i);
+                if (end < 0)
+                {
+                    break;
+                }
+
+                long? ms = ParseClockComment(movetext[i..(end + 1)]);
+                if (ms is not null && clocks.Count > 0 && clocks[^1] is null)
+                {
+                    clocks[^1] = ms;
+                }
+
+                i = end + 1;
+                continue;
+            }
+
+            int start = i;
+            while (i < movetext.Length && !char.IsWhiteSpace(movetext[i]) && movetext[i] != '{')
+            {
+                i++;
+            }
+
+            string token = MoveNumberPrefixPattern.Replace(movetext[start..i], string.Empty);
+            if (token.Length > 0)
+            {
+                clocks.Add(null);
+            }
+        }
+
+        return clocks;
+    }
+
+    // Builds a ClockHistory parallel to the moves from per-ply remaining clocks: the
+    // mover's slot takes the parsed value, the opposite side carries its previous
+    // value forward. Returns empty when no ply carried a clock (treated as no data).
+    internal static IReadOnlyList<ClockSnapshot> BuildClockHistory(int moveCount, IReadOnlyList<long?> plyClocks)
+    {
+        bool any = false;
+        for (int i = 0; i < moveCount && i < plyClocks.Count; i++)
+        {
+            if (plyClocks[i] is not null)
+            {
+                any = true;
+                break;
+            }
+        }
+
+        if (!any)
+        {
+            return [];
+        }
+
+        List<ClockSnapshot> history = new(moveCount);
+        long white = 0;
+        long black = 0;
+        for (int i = 0; i < moveCount; i++)
+        {
+            long? clk = i < plyClocks.Count ? plyClocks[i] : null;
+            if (i % 2 == 0)
+            {
+                if (clk is not null)
+                {
+                    white = clk.Value;
+                }
+            }
+            else if (clk is not null)
+            {
+                black = clk.Value;
+            }
+
+            history.Add(new ClockSnapshot(white, black));
+        }
+
+        return history;
+    }
+
+    // Parses an "H:MM:SS", "MM:SS" or "SS" clock token (fractional seconds allowed)
+    // into milliseconds. Returns null for an unparseable or negative token.
+    internal static long? ParseClockMs(string token)
+    {
+        string[] parts = token.Split(':');
+        if (parts.Length is 0 or > 3)
+        {
+            return null;
+        }
+
+        double seconds = 0;
+        foreach (string part in parts)
+        {
+            if (!double.TryParse(part, NumberStyles.Number, CultureInfo.InvariantCulture, out double value) ||
+                value < 0)
+            {
+                return null;
+            }
+
+            seconds = (seconds * 60) + value;
+        }
+
+        return (long)(seconds * 1000);
+    }
+
+    // Renders remaining milliseconds as the PGN-standard "H:MM:SS" clock annotation.
+    internal static string FormatPgnClock(long ms)
+    {
+        long totalSeconds = Math.Max(0, ms) / 1000;
+        long hours = totalSeconds / 3600;
+        long minutes = (totalSeconds % 3600) / 60;
+        long seconds = totalSeconds % 60;
+        return string.Create(CultureInfo.InvariantCulture, $"{hours}:{minutes:D2}:{seconds:D2}");
     }
 
     internal static UserMatchStatusFilter ParseStatusFilter(string? status) => status switch
@@ -130,6 +291,8 @@ internal sealed class AnalysisGameService(
             positionHistory = [.. resp.PositionHistory];
         }
 
+        IReadOnlyList<ClockSnapshot> clockHistory = BuildClockHistory(uciMoves.Count, ParseMoveClocks(pgn));
+
         AnalysisGame game = new(
             Id: string.Empty,
             UserId: userId,
@@ -143,7 +306,8 @@ internal sealed class AnalysisGameService(
             White: new Dictionary<string, string> { ["name"] = tags.GetValueOrDefault("White", "?") },
             Black: new Dictionary<string, string> { ["name"] = tags.GetValueOrDefault("Black", "?") },
             Tags: tags,
-            CreatedAt: DateTimeOffset.UtcNow);
+            CreatedAt: DateTimeOffset.UtcNow,
+            ClockHistory: clockHistory);
 
         return await repo.InsertAsync(game, ct);
     }
@@ -251,8 +415,10 @@ internal sealed class AnalysisGameService(
             _ => "*",
         };
 
+        IReadOnlyList<ClockSnapshot> clockHistory = ReadClockHistory(match);
+
         Dictionary<string, string> matchTags = BuildMatchTags(result);
-        string pgn = BuildMatchPgn(matchTags, whiteInfo, blackInfo, sanMoves, result);
+        string pgn = BuildMatchPgn(matchTags, whiteInfo, blackInfo, sanMoves, result, clockHistory);
 
         AnalysisGame game = new(
             Id: string.Empty,
@@ -267,7 +433,8 @@ internal sealed class AnalysisGameService(
             White: whiteInfo,
             Black: blackInfo,
             Tags: matchTags,
-            CreatedAt: DateTimeOffset.UtcNow);
+            CreatedAt: DateTimeOffset.UtcNow,
+            ClockHistory: clockHistory);
 
         return await repo.InsertAsync(game, ct);
     }
@@ -292,7 +459,8 @@ internal sealed class AnalysisGameService(
             White: new Dictionary<string, string>(),
             Black: new Dictionary<string, string>(),
             Tags: new Dictionary<string, string> { ["FEN"] = fen, ["SetUp"] = "1" },
-            CreatedAt: DateTimeOffset.UtcNow);
+            CreatedAt: DateTimeOffset.UtcNow,
+            ClockHistory: []);
 
         return await repo.InsertAsync(game, ct);
     }
@@ -316,6 +484,24 @@ internal sealed class AnalysisGameService(
                 .Select(x => x.StringValue)]
             : [];
 
+    // Reads a match document's clock_history (one {white_time_ms, black_time_ms}
+    // sub-struct per applied move). Absent/empty for matches that predate clock
+    // history — an empty list is the correct "no clock data" representation.
+    private static IReadOnlyList<ClockSnapshot> ReadClockHistory(Struct match) =>
+        match.Fields.TryGetValue("clock_history", out Value? v) && v.KindCase == Value.KindOneofCase.ListValue
+            ? [.. v.ListValue.Values
+                .Where(e => e.KindCase == Value.KindOneofCase.StructValue)
+                .Select(e => new ClockSnapshot(
+                    (long)(e.StructValue.Fields.TryGetValue("white_time_ms", out Value? w) ? w.NumberValue : 0),
+                    (long)(e.StructValue.Fields.TryGetValue("black_time_ms", out Value? b) ? b.NumberValue : 0)))]
+            : [];
+
+    private static long? ParseClockComment(string comment)
+    {
+        System.Text.RegularExpressions.Match m = ClockCommentPattern.Match(comment);
+        return m.Success ? ParseClockMs(m.Groups[1].Value) : null;
+    }
+
     private static Dictionary<string, string> BuildMatchTags(string result) =>
         new()
         {
@@ -330,7 +516,8 @@ internal sealed class AnalysisGameService(
         Dictionary<string, string> white,
         Dictionary<string, string> black,
         List<string> sanMoves,
-        string result)
+        string result,
+        IReadOnlyList<ClockSnapshot> clockHistory)
     {
         string whiteName = white.TryGetValue("username", out string? wun) ? wun
             : white.TryGetValue("name", out string? wn) ? wn
@@ -359,6 +546,15 @@ internal sealed class AnalysisGameService(
             }
 
             sb.Append(sanMoves[i]);
+
+            // The clock for the side that just moved: white on even plies, black on odd.
+            // Absent clock data leaves the movetext exactly as it was before this feature.
+            if (i < clockHistory.Count)
+            {
+                long remaining = i % 2 == 0 ? clockHistory[i].WhiteTimeMs : clockHistory[i].BlackTimeMs;
+                sb.Append(CultureInfo.InvariantCulture, $" {{[%clk {FormatPgnClock(remaining)}]}}");
+            }
+
             sb.Append(' ');
         }
 

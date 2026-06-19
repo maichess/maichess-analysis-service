@@ -17,4 +17,5 @@ internal sealed record GameDetailResponse(
     [property: JsonPropertyName("tags")] IReadOnlyDictionary<string, string> Tags,
     [property: JsonPropertyName("moves")] IReadOnlyList<string> Moves,
     [property: JsonPropertyName("fens")] IReadOnlyList<string> Fens,
-    [property: JsonPropertyName("pgn")] string Pgn);
+    [property: JsonPropertyName("pgn")] string Pgn,
+    [property: JsonPropertyName("clock_history")] IReadOnlyList<ClockSnapshotResponse> ClockHistory);
