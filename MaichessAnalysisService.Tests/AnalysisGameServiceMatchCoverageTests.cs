@@ -87,6 +87,7 @@ public sealed class AnalysisGameServiceMatchCoverageTests
         Assert.Equal("Stockfish Level 3", game.Black["name"]);
         Assert.Equal("1-0", game.Result);
         Assert.Equal("fen0", game.StartingFen);
+        Assert.Equal("game-1", game.Id);
         Assert.Contains("[White \"alice\"]", game.Pgn, StringComparison.Ordinal);
         Assert.Contains("[Black \"Stockfish Level 3\"]", game.Pgn, StringComparison.Ordinal);
         Assert.Contains("1. e4 e5", game.Pgn, StringComparison.Ordinal);
@@ -132,6 +133,7 @@ public sealed class AnalysisGameServiceMatchCoverageTests
         Assert.Equal("bot-y", game.White["bot_id"]);
         Assert.Empty(game.Black);
         Assert.Equal("1/2-1/2", game.Result);
+        Assert.Contains("[White \"bot-y\"]", game.Pgn, StringComparison.Ordinal);
         Assert.Contains("[Black \"?\"]", game.Pgn, StringComparison.Ordinal);
     }
 
@@ -353,9 +355,256 @@ public sealed class AnalysisGameServiceMatchCoverageTests
 
         UserMatchSummary summary = Assert.Single(Matches);
         Assert.Equal("3+2", summary.TimeFormat.Id);
+        Assert.Equal(180000, summary.TimeFormat.BaseMs);
         Assert.Equal(2000, summary.TimeFormat.IncrementMs);
         Assert.Equal(string.Empty, summary.TimeFormat.Category);
         Assert.True(summary.FinishedAtMs > 0);
+    }
+
+    [Fact]
+    public async Task List_TimeFormatId_WithCategory_IsExtracted()
+    {
+        Struct m = new();
+        m.Fields["id"] = Value.ForString("mc");
+        m.Fields["status"] = Value.ForString("white_won");
+        m.Fields["time_format_id"] = Value.ForString("10+5");
+        m.Fields["time_format_base_ms"] = Value.ForNumber(600000);
+        m.Fields["time_format_increment_ms"] = Value.ForNumber(5000);
+        m.Fields["time_format_category"] = Value.ForString("rapid");
+        m.Fields["last_move_at"] = Value.ForString("2026-05-01T10:00:00Z");
+        SetupList("white_user_id", "u", m);
+        SetupList("black_user_id", "u");
+
+        (IReadOnlyList<UserMatchSummary> Matches, _, _, _) =
+            await ctx.Service.ListUserMatchesAsync("u", UserMatchStatusFilter.Finished, 1, 20, CancellationToken.None);
+
+        UserMatchSummary summary = Assert.Single(Matches);
+        Assert.Equal("10+5", summary.TimeFormat.Id);
+        Assert.Equal(600000, summary.TimeFormat.BaseMs);
+        Assert.Equal(5000, summary.TimeFormat.IncrementMs);
+        Assert.Equal("rapid", summary.TimeFormat.Category);
+    }
+
+    // ── BuildMatchTags: tag key assertions ──────────────────────────────────
+
+    [Fact]
+    public async Task Import_BuildsCorrectMatchTags()
+    {
+        Struct match = new();
+        match.Fields["status"] = Value.ForString("white_won");
+        match.Fields["white_user_id"] = Value.ForString("wu");
+        match.Fields["fen_history"] = StrList("fen0");
+        SetupMatchRaw("m-tags", match);
+        ctx.SetupUserResolution("wu", "alice");
+
+        AnalysisGame game = await ctx.Service.ImportFromMatchAsync("m-tags", "wu", CancellationToken.None);
+
+        Assert.Equal("Maichess Match", game.Tags["Event"]);
+        Assert.Equal("maichess", game.Tags["Site"]);
+        Assert.True(game.Tags.ContainsKey("Date"));
+        Assert.Matches(@"^\d{4}\.\d{2}\.\d{2}$", game.Tags["Date"]);
+        Assert.Equal("1-0", game.Tags["Result"]);
+        Assert.Contains("[Event \"Maichess Match\"]", game.Pgn, StringComparison.Ordinal);
+        Assert.Contains("[Site \"maichess\"]", game.Pgn, StringComparison.Ordinal);
+        Assert.Contains("[Result \"1-0\"]", game.Pgn, StringComparison.Ordinal);
+        // No san moves → the movetext body is just the result token; EndsWith catches
+        // removal of the sb.Append(result) statement in BuildMatchPgn.
+        Assert.EndsWith("1-0", game.Pgn, StringComparison.Ordinal);
+    }
+
+    // ── ResolvePlayerInfo: empty-string guards ───────────────────────────────
+
+    [Fact]
+    public async Task Import_EmptyStringUserId_TreatedAsNoUser()
+    {
+        Struct match = new();
+        match.Fields["status"] = Value.ForString("white_won");
+        match.Fields["white_user_id"] = Value.ForString(""); // non-null but empty → must not resolve
+        match.Fields["black_user_id"] = Value.ForString("me");
+        match.Fields["fen_history"] = StrList("fen0");
+        SetupMatchRaw("m-emptyuid", match);
+        ctx.SetupUserResolution("me", "MePlayer");
+
+        AnalysisGame game = await ctx.Service.ImportFromMatchAsync("m-emptyuid", "me", CancellationToken.None);
+
+        Assert.Empty(game.White);
+        Assert.Contains("[White \"?\"]", game.Pgn, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Import_EmptyStringBotId_TreatedAsNoBot()
+    {
+        Struct match = new();
+        match.Fields["status"] = Value.ForString("white_won");
+        match.Fields["white_bot_id"] = Value.ForString(""); // non-null but empty → must not resolve
+        match.Fields["black_user_id"] = Value.ForString("me");
+        match.Fields["fen_history"] = StrList("fen0");
+        SetupMatchRaw("m-emptybid", match);
+        ctx.SetupUserResolution("me", "MePlayer");
+
+        AnalysisGame game = await ctx.Service.ImportFromMatchAsync("m-emptybid", "me", CancellationToken.None);
+
+        Assert.Empty(game.White);
+        Assert.Contains("[White \"?\"]", game.Pgn, StringComparison.Ordinal);
+    }
+
+    // ── BuildUserMatchSummary: player field key extraction ───────────────────
+
+    [Fact]
+    public async Task List_ExtractsWhiteAndBlackUserIds()
+    {
+        Struct m = new();
+        m.Fields["id"] = Value.ForString("mx");
+        m.Fields["status"] = Value.ForString("white_won");
+        m.Fields["white_user_id"] = Value.ForString("player-w");
+        m.Fields["black_user_id"] = Value.ForString("player-b");
+        m.Fields["time_format_id"] = Value.ForString("5+0");
+        m.Fields["last_move_at"] = Value.ForString("2026-05-01T10:00:00Z");
+        SetupList("white_user_id", "player-w", m);
+        SetupList("black_user_id", "player-w");
+
+        (IReadOnlyList<UserMatchSummary> Matches, _, _, _) =
+            await ctx.Service.ListUserMatchesAsync("player-w", UserMatchStatusFilter.Finished, 1, 20, CancellationToken.None);
+
+        UserMatchSummary summary = Assert.Single(Matches);
+        Assert.Equal("player-w", summary.White["user_id"]);
+        Assert.Equal("player-b", summary.Black["user_id"]);
+    }
+
+    [Fact]
+    public async Task List_ExtractsWhiteAndBlackBotIds()
+    {
+        Struct m = new();
+        m.Fields["id"] = Value.ForString("my");
+        m.Fields["status"] = Value.ForString("white_won");
+        m.Fields["white_bot_id"] = Value.ForString("bot-w");
+        m.Fields["black_bot_id"] = Value.ForString("bot-b");
+        m.Fields["time_format_id"] = Value.ForString("5+0");
+        m.Fields["last_move_at"] = Value.ForString("2026-05-01T10:00:00Z");
+        SetupList("white_user_id", "u", m);
+        SetupList("black_user_id", "u");
+
+        (IReadOnlyList<UserMatchSummary> Matches, _, _, _) =
+            await ctx.Service.ListUserMatchesAsync("u", UserMatchStatusFilter.Finished, 1, 20, CancellationToken.None);
+
+        UserMatchSummary summary = Assert.Single(Matches);
+        Assert.Equal("bot-w", summary.White["bot_id"]);
+        Assert.Equal("bot-b", summary.Black["bot_id"]);
+    }
+
+    // ── Pagination: page guard ───────────────────────────────────────────────
+
+    [Fact]
+    public async Task List_PageZero_ClampedToPageOne()
+    {
+        SetupList("white_user_id", "u", Finished("keep", "white_won"));
+        SetupList("black_user_id", "u");
+
+        (_, _, int Page, _) =
+            await ctx.Service.ListUserMatchesAsync("u", UserMatchStatusFilter.Finished, 0, 20, CancellationToken.None);
+
+        Assert.Equal(1, Page);
+    }
+
+    // ── Repository side-effects ──────────────────────────────────────────────
+
+    [Fact]
+    public async Task Delete_CallsRepositoryDeleteAsync()
+    {
+        AnalysisGame game = AnalysisServiceContext.BuildGame("g1", "u1");
+        ctx.Repository.GetByIdAsync("g1", Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult<AnalysisGame?>(game));
+        ctx.Repository.DeleteAsync("g1", Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+
+        await ctx.Service.DeleteGameAsync("g1", "u1", CancellationToken.None);
+
+        await ctx.Repository.Received(1).DeleteAsync("g1", Arg.Any<CancellationToken>());
+    }
+
+    // ── ListGamesAsync: pagination offset arithmetic ─────────────────────────
+
+    [Fact]
+    public async Task ListGames_Page2WithPageSize2_ReturnsSecondPage()
+    {
+        List<AnalysisGame> games = [
+            AnalysisServiceContext.BuildGame("g1", "u"),
+            AnalysisServiceContext.BuildGame("g2", "u"),
+            AnalysisServiceContext.BuildGame("g3", "u"),
+        ];
+        ctx.SetupList("u", games, 3L);
+
+        var (Games, Total, Page, PageSize) = await ctx.Service.ListGamesAsync("u", 2, 2, CancellationToken.None);
+
+        AnalysisGame only = Assert.Single(Games);
+        Assert.Equal("g3", only.Id);
+        Assert.Equal(3L, Total);
+    }
+
+    // ── ListUserMatchesAsync: pagination offset arithmetic ───────────────────
+
+    [Fact]
+    public async Task List_Page2WithPageSize3_Returns2MatchesFromSecondPage()
+    {
+        Struct[] matches = Enumerable.Range(1, 5).Select(i =>
+        {
+            Struct s = new();
+            s.Fields["id"] = Value.ForString($"m{i}");
+            s.Fields["status"] = Value.ForString("white_won");
+            s.Fields["time_format_id"] = Value.ForString("5+0");
+            s.Fields["last_move_at"] = Value.ForString($"2026-05-{i:D2}T10:00:00Z");
+            return s;
+        }).ToArray();
+
+        SetupList("white_user_id", "u", matches);
+        SetupList("black_user_id", "u");
+
+        var (Matches, Total, _, _) = await ctx.Service.ListUserMatchesAsync(
+            "u", UserMatchStatusFilter.Finished, 2, 3, CancellationToken.None);
+
+        Assert.Equal(2, Matches.Count);
+        Assert.Equal(5, Total);
+    }
+
+    // ── ImportFromPgn: position history passed to subsequent moves ───────────
+
+    [Fact]
+    public async Task ImportFromPgn_PassesPositionHistoryToSubsequentMoves()
+    {
+        const string fen0 = InitialFen;
+        const string fen1 = "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1";
+        const string fen2 = "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq e6 0 2";
+
+        ctx.SetupValidateMoveSan(fen0, "e4", "e2e4", fen1);
+
+        ValidateMoveSanResponse resp2 = new() { Valid = true, UciMove = "e7e5", ResultingFen = fen2 };
+        ctx.MovesClient
+            .ValidateMoveSanAsync(
+                Arg.Is<ValidateMoveSanRequest>(r => r.Fen == fen1 && r.Move == "e5" && r.PositionHistory.Contains(fen1)),
+                Arg.Any<Grpc.Core.Metadata>(), Arg.Any<DateTime?>(), Arg.Any<CancellationToken>())
+            .Returns(GrpcHelper.GrpcCall(resp2));
+
+        const string pgn = "[White \"A\"]\n[Black \"B\"]\n[Result \"*\"]\n\n1. e4 e5 *";
+        AnalysisGame game = await ctx.Service.ImportFromPgnAsync(pgn, "u", CancellationToken.None);
+
+        Assert.Equal(2, game.Moves.Count);
+        Assert.Equal("e7e5", game.Moves[1]);
+        Assert.Equal(2, game.Fens.Count);
+        Assert.Equal(fen2, game.Fens[1]);
+    }
+
+    // ── ImportFromFen: PGN template and Tags ─────────────────────────────────
+
+    [Fact]
+    public async Task ImportFromFen_StoresPgnWithFenTag_AndTags()
+    {
+        const string fen = "r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4";
+        AnalysisGame game = await ctx.Service.ImportFromFenAsync(fen, "u", CancellationToken.None);
+
+        Assert.Contains($"[FEN \"{fen}\"]", game.Pgn, StringComparison.Ordinal);
+        Assert.Contains("[SetUp \"1\"]", game.Pgn, StringComparison.Ordinal);
+        Assert.Equal(fen, game.Tags["FEN"]);
+        Assert.Equal("1", game.Tags["SetUp"]);
     }
 
     private static Struct Finished(string id, string status)

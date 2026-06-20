@@ -134,6 +134,9 @@ namespace MaichessAnalysisService.Tests.Features
 #line 18
     await testRunner.AndAsync("the result game black name is \"Bob\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
+#line 19
+    await testRunner.AndAsync("the result game has id \"game-1\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
             }
             await this.ScenarioCleanupAsync();
         }
@@ -146,7 +149,7 @@ namespace MaichessAnalysisService.Tests.Features
             string[] tagsOfScenario = ((string[])(null));
             System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
             global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("PGN with empty movetext imports with zero moves", null, tagsOfScenario, argumentsOfScenario, featureTags);
-#line 20
+#line 21
   this.ScenarioInitialize(scenarioInfo);
 #line hidden
             if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
@@ -156,13 +159,13 @@ namespace MaichessAnalysisService.Tests.Features
             else
             {
                 await this.ScenarioStartAsync();
-#line 21
+#line 22
     await testRunner.WhenAsync("\"user-1\" imports the following PGN:", "[White \"Alice\"]\r\n[Black \"Bob\"]\r\n[Result \"*\"]\r\n\r\n*", ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
-#line 29
+#line 30
     await testRunner.ThenAsync("the result game source is \"pgn\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
-#line 30
+#line 31
     await testRunner.AndAsync("the result game has 0 moves", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
             }
@@ -177,7 +180,7 @@ namespace MaichessAnalysisService.Tests.Features
             string[] tagsOfScenario = ((string[])(null));
             System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
             global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("PGN with missing White and Black tags defaults to \"?\"", null, tagsOfScenario, argumentsOfScenario, featureTags);
-#line 32
+#line 33
   this.ScenarioInitialize(scenarioInfo);
 #line hidden
             if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
@@ -187,13 +190,13 @@ namespace MaichessAnalysisService.Tests.Features
             else
             {
                 await this.ScenarioStartAsync();
-#line 33
+#line 34
     await testRunner.WhenAsync("\"user-1\" imports the following PGN:", "[Event \"Test\"]\r\n[Result \"*\"]\r\n\r\n*", ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
-#line 40
+#line 41
     await testRunner.ThenAsync("the result game white name is \"?\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
-#line 41
+#line 42
     await testRunner.AndAsync("the result game black name is \"?\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
             }
@@ -208,7 +211,7 @@ namespace MaichessAnalysisService.Tests.Features
             string[] tagsOfScenario = ((string[])(null));
             System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
             global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("Malformed PGN with no tags and no moves throws InvalidPgnException", null, tagsOfScenario, argumentsOfScenario, featureTags);
-#line 43
+#line 44
   this.ScenarioInitialize(scenarioInfo);
 #line hidden
             if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
@@ -218,11 +221,67 @@ namespace MaichessAnalysisService.Tests.Features
             else
             {
                 await this.ScenarioStartAsync();
-#line 44
+#line 45
     await testRunner.WhenAsync("\"user-1\" imports PGN \"\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
-#line 45
-    await testRunner.ThenAsync("an InvalidPgnException is thrown", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+#line 46
+    await testRunner.ThenAsync("an InvalidPgnException is thrown with reason containing \"empty pgn\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+#line hidden
+            }
+            await this.ScenarioCleanupAsync();
+        }
+        
+        [Xunit.SkippableFactAttribute(DisplayName="PGN with explicit Result tag preserves the result")]
+        [Xunit.TraitAttribute("FeatureTitle", "Import From PGN")]
+        [Xunit.TraitAttribute("Description", "PGN with explicit Result tag preserves the result")]
+        public async System.Threading.Tasks.Task PGNWithExplicitResultTagPreservesTheResult()
+        {
+            string[] tagsOfScenario = ((string[])(null));
+            System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
+            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("PGN with explicit Result tag preserves the result", null, tagsOfScenario, argumentsOfScenario, featureTags);
+#line 48
+  this.ScenarioInitialize(scenarioInfo);
+#line hidden
+            if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
+            {
+                testRunner.SkipScenario();
+            }
+            else
+            {
+                await this.ScenarioStartAsync();
+#line 49
+    await testRunner.WhenAsync("\"user-1\" imports the following PGN:", "[White \"Alice\"]\r\n[Black \"Bob\"]\r\n[Result \"1-0\"]\r\n\r\n1-0", ((global::Reqnroll.Table)(null)), "When ");
+#line hidden
+#line 57
+    await testRunner.ThenAsync("the result game result is \"1-0\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
+#line hidden
+            }
+            await this.ScenarioCleanupAsync();
+        }
+        
+        [Xunit.SkippableFactAttribute(DisplayName="PGN without Result tag defaults to asterisk")]
+        [Xunit.TraitAttribute("FeatureTitle", "Import From PGN")]
+        [Xunit.TraitAttribute("Description", "PGN without Result tag defaults to asterisk")]
+        public async System.Threading.Tasks.Task PGNWithoutResultTagDefaultsToAsterisk()
+        {
+            string[] tagsOfScenario = ((string[])(null));
+            System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
+            global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("PGN without Result tag defaults to asterisk", null, tagsOfScenario, argumentsOfScenario, featureTags);
+#line 59
+  this.ScenarioInitialize(scenarioInfo);
+#line hidden
+            if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
+            {
+                testRunner.SkipScenario();
+            }
+            else
+            {
+                await this.ScenarioStartAsync();
+#line 60
+    await testRunner.WhenAsync("\"user-1\" imports the following PGN:", "[White \"Alice\"]\r\n[Black \"Bob\"]\r\n\r\n*", ((global::Reqnroll.Table)(null)), "When ");
+#line hidden
+#line 67
+    await testRunner.ThenAsync("the result game result is \"*\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
             }
             await this.ScenarioCleanupAsync();
@@ -236,7 +295,7 @@ namespace MaichessAnalysisService.Tests.Features
             string[] tagsOfScenario = ((string[])(null));
             System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
             global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("PGN with an illegal move throws InvalidPgnException with move in reason", null, tagsOfScenario, argumentsOfScenario, featureTags);
-#line 47
+#line 69
   this.ScenarioInitialize(scenarioInfo);
 #line hidden
             if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
@@ -246,13 +305,13 @@ namespace MaichessAnalysisService.Tests.Features
             else
             {
                 await this.ScenarioStartAsync();
-#line 48
+#line 70
     await testRunner.GivenAsync("the move validator rejects SAN \"Zz99\" at the initial FEN", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
 #line hidden
-#line 49
+#line 71
     await testRunner.WhenAsync("\"user-1\" imports the following PGN:", "[Event \"Test\"]\r\n[Result \"*\"]\r\n\r\n1. Zz99 *", ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
-#line 56
+#line 78
     await testRunner.ThenAsync("an InvalidPgnException is thrown with reason containing \"Zz99\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
             }
@@ -267,7 +326,7 @@ namespace MaichessAnalysisService.Tests.Features
             string[] tagsOfScenario = ((string[])(null));
             System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
             global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("PGN with FEN header sets custom starting position", null, tagsOfScenario, argumentsOfScenario, featureTags);
-#line 58
+#line 80
   this.ScenarioInitialize(scenarioInfo);
 #line hidden
             if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
@@ -277,16 +336,16 @@ namespace MaichessAnalysisService.Tests.Features
             else
             {
                 await this.ScenarioStartAsync();
-#line 59
+#line 81
     await testRunner.GivenAsync(("the move validator accepts SAN \"e4\" at \"r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w K" +
                         "Qkq - 0 1\" as UCI \"e2e4\" resulting in \"r3k2r/pppppppp/8/8/4P3/8/PPPP1PPP/R3K2R b" +
                         " KQkq e3 0 1\""), ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
 #line hidden
-#line 60
+#line 82
     await testRunner.WhenAsync("\"user-1\" imports the following PGN:", ("[FEN \"r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1\"]\r\n[SetUp \"1\"]\r\n\r\n1. e4 " +
                         "*"), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
-#line 67
+#line 89
     await testRunner.ThenAsync(("the result game starting fen is \"r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0" +
                         " 1\""), ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden

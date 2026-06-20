@@ -19,3 +19,9 @@ Feature: List Games
     Given "user-1" has 5 saved games
     When "user-1" lists games page 1 page_size 500
     Then the list result page_size is 100
+
+  Scenario: Page 0 is clamped to page 1
+    Given "user-1" has 3 saved games
+    When "user-1" lists games page 0 page_size 2
+    Then the list result page is 1
+    And the list result contains 2 games

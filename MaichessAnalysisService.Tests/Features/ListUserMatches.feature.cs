@@ -341,6 +341,9 @@ namespace MaichessAnalysisService.Tests.Features
 #line 53
     await testRunner.AndAsync("the user matches result total is 5", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
+#line 54
+    await testRunner.AndAsync("the user matches result first match id is \"match-3\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
+#line hidden
             }
             await this.ScenarioCleanupAsync();
         }
@@ -353,7 +356,7 @@ namespace MaichessAnalysisService.Tests.Features
             string[] tagsOfScenario = ((string[])(null));
             System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
             global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("page_size is clamped to 100", null, tagsOfScenario, argumentsOfScenario, featureTags);
-#line 55
+#line 56
   this.ScenarioInitialize(scenarioInfo);
 #line hidden
             if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
@@ -363,16 +366,16 @@ namespace MaichessAnalysisService.Tests.Features
             else
             {
                 await this.ScenarioStartAsync();
-#line 56
+#line 57
     await testRunner.GivenAsync("user \"user-1\" has no finished matches as white", ((string)(null)), ((global::Reqnroll.Table)(null)), "Given ");
 #line hidden
-#line 57
+#line 58
     await testRunner.AndAsync("user \"user-1\" has no finished matches as black", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
-#line 58
+#line 59
     await testRunner.WhenAsync("\"user-1\" lists their finished matches page 1 page_size 500", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
-#line 59
+#line 60
     await testRunner.ThenAsync("the user matches result page_size is 100", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
             }
@@ -387,7 +390,7 @@ namespace MaichessAnalysisService.Tests.Features
             string[] tagsOfScenario = ((string[])(null));
             System.Collections.Specialized.OrderedDictionary argumentsOfScenario = new System.Collections.Specialized.OrderedDictionary();
             global::Reqnroll.ScenarioInfo scenarioInfo = new global::Reqnroll.ScenarioInfo("The time format embedded in a match is preserved", null, tagsOfScenario, argumentsOfScenario, featureTags);
-#line 61
+#line 62
   this.ScenarioInitialize(scenarioInfo);
 #line hidden
             if ((global::Reqnroll.TagHelper.ContainsIgnoreTag(scenarioInfo.CombinedTags) || global::Reqnroll.TagHelper.ContainsIgnoreTag(featureTags)))
@@ -407,19 +410,19 @@ namespace MaichessAnalysisService.Tests.Features
                             "white_won",
                             "3+2",
                             "2026-05-01T10:00:00Z"});
-#line 62
+#line 63
     await testRunner.GivenAsync("user \"user-1\" has the following finished matches as white:", ((string)(null)), table6, "Given ");
 #line hidden
-#line 65
+#line 66
     await testRunner.AndAsync("user \"user-1\" has no finished matches as black", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
-#line 66
+#line 67
     await testRunner.WhenAsync("\"user-1\" lists their finished matches page 1 page_size 20", ((string)(null)), ((global::Reqnroll.Table)(null)), "When ");
 #line hidden
-#line 67
+#line 68
     await testRunner.ThenAsync("the user matches first time format id is \"3+2\"", ((string)(null)), ((global::Reqnroll.Table)(null)), "Then ");
 #line hidden
-#line 68
+#line 69
     await testRunner.AndAsync("the user matches first increment ms is 2000", ((string)(null)), ((global::Reqnroll.Table)(null)), "And ");
 #line hidden
             }

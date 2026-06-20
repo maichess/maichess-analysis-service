@@ -9,6 +9,7 @@ Feature: Import From Match
     Then the result game source is "match"
     And the result game match id is "match-1"
     And the result game has 1 moves
+    And the result game has id "game-1"
 
   Scenario: Ongoing match imports as a snapshot with an open-ended result
     Given match "match-2" exists with status "ongoing" and white user "user-1" and black user "user-2"

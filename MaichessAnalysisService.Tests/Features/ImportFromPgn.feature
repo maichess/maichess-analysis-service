@@ -16,6 +16,7 @@ Feature: Import From PGN
     And the result game has 2 moves
     And the result game white name is "Alice"
     And the result game black name is "Bob"
+    And the result game has id "game-1"
 
   Scenario: PGN with empty movetext imports with zero moves
     When "user-1" imports the following PGN:
@@ -42,7 +43,28 @@ Feature: Import From PGN
 
   Scenario: Malformed PGN with no tags and no moves throws InvalidPgnException
     When "user-1" imports PGN ""
-    Then an InvalidPgnException is thrown
+    Then an InvalidPgnException is thrown with reason containing "empty pgn"
+
+  Scenario: PGN with explicit Result tag preserves the result
+    When "user-1" imports the following PGN:
+      """
+      [White "Alice"]
+      [Black "Bob"]
+      [Result "1-0"]
+
+      1-0
+      """
+    Then the result game result is "1-0"
+
+  Scenario: PGN without Result tag defaults to asterisk
+    When "user-1" imports the following PGN:
+      """
+      [White "Alice"]
+      [Black "Bob"]
+
+      *
+      """
+    Then the result game result is "*"
 
   Scenario: PGN with an illegal move throws InvalidPgnException with move in reason
     Given the move validator rejects SAN "Zz99" at the initial FEN

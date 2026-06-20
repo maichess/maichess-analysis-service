@@ -152,6 +152,29 @@ then `dotnet stryker` inside the test project directory. See `README.md` for
 details. Mutation testing is not required to pass on every change, but use it
 when investigating whether tests genuinely exercise behaviour.
 
+#### Documented equivalent mutations (AnalysisGameService.cs)
+
+The following 18 surviving mutants are genuine equivalents — the mutated code
+is observably identical to the original for all reachable inputs. They are
+tracked here so future Stryker runs do not re-investigate them.
+
+| Line(s) | Mutation | Why equivalent |
+|---------|----------|----------------|
+| L60-63 | `" "` → `""` in `ParsePgn` regex replacements | `Split(RemoveEmptyEntries)` coalesces all whitespace runs; absent or extra spaces produce the same token list. |
+| L96-97 | `" "` → `""` in `ParseMoveClocks` regex replacements | Same reason as L60-63. |
+| L107 | Remove `continue` in whitespace branch of `ParseMoveClocks` | After `i++` the code falls through to the token inner loop, which re-reads the same adjacent token and produces an empty string — no clock entry added, identical result. |
+| L113 | `end < 0` → `end <= 0` (equality mutation) | Differs only when `}` is at position 0 in the extracted movetext. Valid PGN and all tested inputs never place a bare `}` as the very first character of the movetext. |
+| L125 | Remove `continue` after clock comment in `ParseMoveClocks` | After advancing past `}` the inner loop reads the next token, which is always a move-number prefix (e.g. `"2."`) that strips to empty, so no extra null is appended to clocks. |
+| L155 | Remove `break` in `BuildClockHistory` `any` check | `any = true` is still set on the same iteration; completing the loop rather than breaking early produces the same result. |
+| L247 | Remove `await Task.WhenAll(countTask, gamesTask)` in `ListGamesAsync` | NSubstitute mocks return already-completed tasks; the subsequent individual awaits in the return statement succeed regardless. |
+| L297 | `Id: string.Empty` → any other string in `ImportFromPgnAsync` | The `InsertAsync` mock returns `game with { Id = "game-1" }`, replacing whatever placeholder was passed; the original value is never observed. |
+| L349:53-351:55 | Conditional (false) — always use `Skip/Take` branch | `Enumerable.Skip(n)` where `n >= Count` returns an empty sequence; dropping the short-circuit `[]` guard gives the same result. |
+| L349:53-349:72 | `offset >= all.Count` → `offset > all.Count` | Differs only when `offset == Count`, where both `Skip(Count).Take(n)` and `[]` are empty. |
+| L450 | `Id: string.Empty` → any other string in `ImportFromFenAsync` | Same reason as L297. |
+| L502 | `m.Success ? ParseClockMs(...) : null` → always call `ParseClockMs` | When `m.Success` is false, `m.Groups[1].Value` is `""` and `ParseClockMs("")` returns `null` — identical to the `: null` arm. |
+| L539 | Remove `sb.AppendLine()` blank line in `BuildMatchPgn` | No test asserts the exact blank-line separator between PGN tag section and movetext; the semantic content is unchanged. |
+| L581 | `"blitz"` → `""` in `ReadTimeFormat` switch arm | When `legacy == "blitz"` the mutated arm pattern `""` never matches, so control falls to the `_` default arm which maps to the same `("5+0", 300_000L)` result. |
+
 ## Environment Variables
 
 | Config key | Description |

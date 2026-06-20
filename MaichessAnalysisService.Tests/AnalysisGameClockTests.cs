@@ -204,6 +204,19 @@ public sealed class AnalysisGameClockTests
         Assert.Contains("e5", movetext, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void ExtractMovetext_MultipleTags_StripsBothTagsAndReturnsMovetext()
+    {
+        // Two tags: last.Index is non-zero, so the correct result requires using
+        // last.Index + last.Length, not just last.Length.
+        const string pgn = "[White \"A\"]\n[Black \"B\"]\n\n1. e4 *";
+
+        string movetext = AnalysisGameService.ExtractMovetext(pgn);
+
+        Assert.DoesNotContain("Black", movetext, StringComparison.Ordinal);
+        Assert.Contains("1. e4", movetext, StringComparison.Ordinal);
+    }
+
     // ── ImportFromMatch: clock_history → PGN + AnalysisGame ──────────────────
 
     [Fact]

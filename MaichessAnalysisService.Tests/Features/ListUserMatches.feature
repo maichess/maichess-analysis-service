@@ -51,6 +51,7 @@ Feature: List User Matches
     When "user-1" lists their finished matches page 2 page_size 2
     Then the user matches result contains 2 matches
     And the user matches result total is 5
+    And the user matches result first match id is "match-3"
 
   Scenario: page_size is clamped to 100
     Given user "user-1" has no finished matches as white
